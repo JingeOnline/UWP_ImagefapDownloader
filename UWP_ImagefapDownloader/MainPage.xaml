@@ -62,18 +62,26 @@
 
         </Grid>
         <ListView SelectionMode="Single" Grid.Row="2" Margin="0,0,0,8" 
-                  ItemsSource="{x:Bind AlbumCollection}" >
+                  ItemsSource="{x:Bind AlbumCollection}" x:Name="ListView_1">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="local:Album" >
-                    <StackPanel Orientation="Horizontal">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="auto"/>
+                        </Grid.ColumnDefinitions>
                         <Button Background="Transparent" VerticalAlignment="Center"
                                 ToolTipService.ToolTip="Delete this album" x:Name="Button_Delete"
                                 Click="Button_Delete_Click">
                             <SymbolIcon Symbol="Delete"/>
                         </Button>
                         <TextBlock Style="{StaticResource Style_TextBlock_1}" 
-                               Text="{x:Bind AlbumUrl}" VerticalAlignment="Center"/>
-                    </StackPanel>
+                               Text="{x:Bind AlbumUrl}" VerticalAlignment="Center"
+                                   Margin="12,0" Grid.Column="1" Width="auto" />
+                        <SymbolIcon Symbol="{x:Bind DownloadStateIcon}" 
+                                    Grid.Column="2"/>
+                    </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
@@ -94,9 +102,9 @@
                     </StackPanel>
                 </Button.Content>
             </Button>
-            <TextBlock FontSize="16" Grid.Column="1" Text="{x:Bind DownloadFolderPath,Mode=TwoWay}"
+            <TextBlock FontSize="16" Grid.Column="1" Text="{x:Bind DownloadFolder.Path,Mode=OneWay}"
                        VerticalAlignment="Center"/>
-            <ToggleButton Grid.Column="2" x:Name="ToggleButton_Run"
+            <ToggleButton Grid.Column="2" x:Name="ToggleButton_Run" 
                           Click="ToggleButton_Run_Click" Width="256">
                 <ToggleButton.Content>
                     <StackPanel Orientation="Horizontal">
