@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
@@ -51,11 +52,28 @@ namespace UWP_ImagefapDownloader
         //当前下载的图片文件名称
         public string CurrentImageName { get; set; }
         //当前已下载文件的总大小
-        public long DownloadFullSize { get; set; }
+        private long downloadImagesSize=0;
+        public long DownloadImagesSize 
+        {
+            get { return downloadImagesSize/1024/1024; }
+            set
+            {
+                OnPropertyChanged("DownloadImagesSize");
+            }
+        }
         //当前已下载的图片总数量
-        public int DownloadImageCount { get; set; }
+        private int downloadImagesCount=0;
+        public int DownloadImagesCount 
+        {
+            get { return downloadImagesCount; }
+            set
+            {
+                downloadImagesCount = value;
+                OnPropertyChanged("DownloadImagesCount");
+            }
+        }
         //下载失败的文件List
-        public ObservableCollection<Picture> ImageFailCollection { get; set; }
+        public ObservableCollection<Picture> PictureFailCollection = new ObservableCollection<Picture>();
         //下载路径（默认值为windows相册）
         //private string downloadFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
         private StorageFolder downloadFolder = KnownFolders.PicturesLibrary;
@@ -120,20 +138,12 @@ namespace UWP_ImagefapDownloader
         }
 
         //用户点击“下载”和“暂停”
-        private async void ToggleButton_Run_Click(object sender, RoutedEventArgs e)
+        private void ToggleButton_RunOrPause_Click(object sender, RoutedEventArgs e)
         {
             ToggleButton toggleButton = sender as ToggleButton;
-            if (toggleButton.IsChecked==true)
+            if (toggleButton.IsChecked == true)
             {
-                //imageDownload("http://cdn.akc.org/content/hero/puppy-boundaries_header.jpg","123.jpg");
-                //imageDownload("https://i.ytimg.com/vi/MPV2METPeJU/maxresdefault.jpg", "1232.jpg");
-                //imageDownload("https://www.sciencealert.com/images/2020-03/processed/010-pomeranian_1024.jpg", "1223.jpg");
-                //imageDownload("https://post.medicalnewstoday.com/wp-content/uploads/sites/3/2020/02/322868_1100-1100x628.jpg", "123.jpg");
-                //imageDownload("http://cdn.akc.org/content/hero/puppy-boundaries_header.jpg", "123.jpg");
-                //imageDownload("https://i.ytimg.com/vi/MPV2METPeJU/maxresdefault.jpg", "1232.jpg");
-                //imageDownload("https://www.sciencealert.com/images/2020-03/processed/010-pomeranian_1024.jpg", "1223.jpg");
-                //imageDownload("https://post.medicalnewstoday.com/wp-content/uploads/sites/3/2020/02/322868_1100-1100x628.jpg", "123.jpg");
-                test();
+                startDonwload();
             }
             else
             {
@@ -141,53 +151,47 @@ namespace UWP_ImagefapDownloader
             }
         }
 
-        private void test()
-        {
-            string url = UrlInput;
-            getImagePagesUrlsFromAlbuUrl(url);
-        }
-
-        //开始下载
-        private void StartDownload()
+        //开始主流程，解析和下载流程
+        private async void startDonwload()
         {
             for (int i = 0; i < AlbumCollection.Count; i++)
             {
+                //ListView_1.SelectedItem = AlbumCollection[i];
+                AlbumCollection[i] = await getImagePagesUrlsFromAlbum(AlbumCollection[i]);
+                await donwloadAlbumObject(AlbumCollection[i]);
 
             }
+            //await new MessageDialog("下载完成", "下载完成").ShowAsync();
+            ContentDialog_DownloadFinish dialog = new ContentDialog_DownloadFinish(this);
+            await dialog.ShowAsync();
+            resetData();
         }
-        
-        //根据url分析一个Album，找到所有图片下载链接
-        private async void analyseAlbumAsync(string url)
-        {
-            
-            //string htmlAlbumPage = await htmlDownloadAsync(url);
-        }
+
 
         //传入初始的相册URL，找到所有的ImagePage的url，返回album
         //TODO:判断URL无效
-        private async Task<Album> getImagePagesUrlsFromAlbuUrl(string url)
+        private async Task<Album> getImagePagesUrlsFromAlbum(Album album)
         {
             //去掉url头尾的空格
-            url = url.Trim();
+            string url = album.AlbumUrlUserInput.Trim();
             //如果是相册的某一页url，修复成相册本身的url
-            if(url.Contains("?gid"))
+            if (url.Contains("?gid"))
             {
                 int index = url.LastIndexOf("?gid");
-                url=url.Remove(index);
+                url = url.Remove(index);
             }
 
-            //创建Album对象
-            Album album = new Album(url);
+            album.AlbumUrlStandard = url;
 
             //找到url中的相册id
             string pattern = @"/pictures/(\d{7,})/";
             //构建一次能显示所有照片的页面url
             Match match = Regex.Match(url, pattern);
-            string id= match.Value;
+            string id = match.Value;
             id = id.Remove(0, 10);
-            id = id.Remove(id.Length-1);
+            id = id.Remove(id.Length - 1);
             url = url + "?gid=" + id + "&view=2";
-            
+
 
             string htmlAlbumPage = await htmlDownloadAsync(url);
             album.ImagePageUrlList = searchPageUrlInAlbum(htmlAlbumPage);
@@ -209,6 +213,35 @@ namespace UWP_ImagefapDownloader
                 urlList.Add(url);
             }
             return urlList;
+        }
+
+        //下载一个解析好的Album对象，把每张图片存入本地
+        private async Task donwloadAlbumObject(Album album)
+        {
+            int picNum = 0;
+            foreach (string imagePageUrl in album.ImagePageUrlList)
+            {
+                picNum++;
+                Picture picture = await findPictureInImagePage(album.AlbumName, picNum, imagePageUrl);
+                album.PictureList.Add(picture);
+                imageDownload(picture);
+            }
+            album.IsDownloaded = true;
+            //album.DownloadStateIcon = Symbol.Accept;
+        }
+
+        //下载ImagePage页面，找到Image的url，返回Picture对象
+        private async Task<Picture> findPictureInImagePage(string albumName, int picNum, string pageUrl)
+        {
+            string html = await htmlDownloadAsync(pageUrl);
+            string pattern = @"https://cdn.imagefap.com/images/full[^\f\n\r\t\v>\u0022]*";
+            Match match = Regex.Match(html, pattern);
+            string imageUrl = match.ToString();
+            Picture picture = new Picture();
+            picture.PictureFileName = albumName + "_" + picNum + ".jpg";
+            picture.PictureUrl = imageUrl;
+            picture.PicturePageUrl = pageUrl;
+            return picture;
         }
 
         //下载网页HTML文本
@@ -235,17 +268,30 @@ namespace UWP_ImagefapDownloader
         }
 
         //下载图片并写入到本地
-        private async void imageDownload(string url,string fileName)
+        private async void imageDownload(Picture picture)
         {
-            Uri uri = new System.Uri(url);
+            Uri uri = new System.Uri(picture.PictureUrl);
             HttpClient client = new HttpClient();
-            byte[] buffer = await client.GetByteArrayAsync(uri);
-            //创建新文件，如果该文件存在则自动在末尾追加一个Unique名称。
-            StorageFile file = await DownloadFolder.CreateFileAsync(fileName, options: CreationCollisionOption.GenerateUniqueName);
-            using (Stream stream = await file.OpenStreamForWriteAsync())
+            try
             {
-                stream.Write(buffer, 0, buffer.Length);
+                byte[] buffer = await client.GetByteArrayAsync(uri);
+                //创建新文件，如果该文件存在则自动在末尾追加一个Unique名称。
+                StorageFile file = await DownloadFolder.CreateFileAsync(picture.PictureFileName, options: CreationCollisionOption.GenerateUniqueName);
+                using (Stream stream = await file.OpenStreamForWriteAsync())
+                {
+                    stream.Write(buffer, 0, buffer.Length);
+                }
+                DownloadImagesCount++;
+                //DownloadImagesSize += buffer.Length;
+                downloadImagesSize += buffer.Length;
+                //让绑定的ImagesDownloadedSize属性强制刷新
+                DownloadImagesSize = 0;
             }
+            catch (System.Net.Http.HttpRequestException e)
+            {
+                PictureFailCollection.Add(picture);
+            }
+
         }
 
         private void HandleDownloadAsync(DownloadOperation download, bool v)
@@ -256,10 +302,20 @@ namespace UWP_ImagefapDownloader
         private async void writeStringToFile(string fileName, string content)
         {
             //创建新文件，如果该文件存在则自动在末尾追加一个Unique名称。
-            StorageFile file=await DownloadFolder.CreateFileAsync(fileName,options: CreationCollisionOption.GenerateUniqueName);
+            StorageFile file = await DownloadFolder.CreateFileAsync(fileName, options: CreationCollisionOption.GenerateUniqueName);
             //把文字写入文件
-            await FileIO.WriteTextAsync(file,content); ;
+            await FileIO.WriteTextAsync(file, content); ;
         }
 
+        //重置程序的所有统计数据和UI
+        public void resetData()
+        {
+            AlbumCollection.Clear();
+            PictureFailCollection.Clear();
+            downloadImagesSize = 0;
+            DownloadImagesSize = 0;
+            DownloadImagesCount = 0;
+            ToggleButton_RunOrPause.IsChecked = false;
+        }
     }
 }

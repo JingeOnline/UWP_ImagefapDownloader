@@ -10,6 +10,7 @@ namespace UWP_ImagefapDownloader
     {
         public string PictureFileName { get; set; }
         public string PictureUrl { get; set; }
+        public string PicturePageUrl { get; set; }
         //public string PictureFilePath { get; set; }
     }
 }

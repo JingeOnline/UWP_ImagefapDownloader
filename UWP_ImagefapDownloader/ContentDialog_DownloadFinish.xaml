@@ -1,0 +1,31 @@
+﻿<ContentDialog
+    x:Class="UWP_ImagefapDownloader.ContentDialog_DownloadFinish"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:UWP_ImagefapDownloader"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="Download Complete"
+    CloseButtonText="OK"
+    CloseButtonClick="ContentDialog_CloseButtonClick">
+
+    <Grid>
+        <StackPanel>
+            <TextBlock IsTextSelectionEnabled="True" x:Name="TextBlock_Result" FontSize="16" Margin="0,12"/>
+            <StackPanel BorderThickness="1" BorderBrush="{ThemeResource AppBarItemForegroundThemeBrush}" Margin="0,12,0,0" 
+                        x:Name="StackPanel_FailList">
+                <TextBlock Text="Fail List" FontSize="16"/>
+                <TextBlock Text="You can click the link to check the fail picture on web" FontSize="12"/>
+                <ListView ItemsSource="{x:Bind PictureFailList}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="local:Picture">
+                            <HyperlinkButton Content="{x:Bind PicturePageUrl}" NavigateUri="{x:Bind PicturePageUrl}"
+                                             HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</ContentDialog>

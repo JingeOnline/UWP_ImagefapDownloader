@@ -12,32 +12,49 @@ namespace UWP_ImagefapDownloader
     public class Album:INotifyPropertyChanged
     {   
         //相册的URL，url不带任何?gid,view=等字符
-        private String albumUrl;
+        private String albumUrlUserInput;
+        //相册的标准URL(取名称用)
+        private string albumUrlStandard;
         //Imagefap图片页面的URl
         private List<string> imagePageUrlList = new List<string>();
         //图片的列表
-        private List<Picture> imageList = new List<Picture>();
+        private List<Picture> pictureList = new List<Picture>();
         //相册名称，也是该相册所有照片的名称前缀
         private string albumName;
         //该相册是否下载完成
         private bool isDownloaded = false;
-        private Symbol downloadStateIcon=Symbol.Clock;
+        //下载状态的图标
+        private Symbol downloadStateIcon=Symbol.Delete;
+        //删除按钮的可见性
 
-        ////Imagefap某个相册所有页面的URL
-        //private List<string> albumPageUrlList = new List<string>();
 
-
-        public String AlbumUrl
+        public String AlbumUrlUserInput
         {
             get
             {
-                return albumUrl;
+                return albumUrlUserInput;
             }
             set
             {
-                albumUrl = value;
+                albumUrlUserInput = value;
             }
         }
+
+        public string AlbumUrlStandard
+        {
+            get
+            {
+                return albumUrlStandard;
+            }
+            set
+            {
+                albumUrlStandard = value;
+                //为相册名称赋值
+                string[] array = Regex.Split(value, "/", RegexOptions.IgnoreCase);
+                this.AlbumName = array[array.Length - 1];
+            }
+        }
+
         public List<string> ImagePageUrlList
         {
             get
@@ -50,17 +67,6 @@ namespace UWP_ImagefapDownloader
             }
         }
 
-        //public List<string> AlbumPageUrlList
-        //{
-        //    get
-        //    {
-        //        return albumPageUrlList;
-        //    }
-        //    set
-        //    {
-        //        albumPageUrlList = value;
-        //    }
-        //}
         public string AlbumName
         {
             get
@@ -73,10 +79,10 @@ namespace UWP_ImagefapDownloader
             }
         }
 
-        public List<Picture> ImageList
+        public List<Picture> PictureList
         {
-            get { return imageList; }
-            set { imageList = value; }
+            get { return pictureList; }
+            set { pictureList = value; }
         }
 
         public bool IsDownloaded
@@ -90,9 +96,10 @@ namespace UWP_ImagefapDownloader
                 }
                 else
                 {
-                    DownloadStateIcon = Symbol.Clock;
+                    DownloadStateIcon = Symbol.Delete;
                 }
-                isDownloaded = value; 
+                isDownloaded = value;
+                //OnPropertyChanged("IsDownloaded");
             }
         }
 
@@ -108,9 +115,7 @@ namespace UWP_ImagefapDownloader
 
         public Album(string url)
         {
-            this.albumUrl = url;
-            string[] array = Regex.Split(url, "/", RegexOptions.IgnoreCase);
-            this.albumName = array[array.Length - 1];
+            this.AlbumUrlUserInput = url;
         }
 
 
