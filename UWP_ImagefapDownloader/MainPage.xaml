@@ -16,7 +16,7 @@
         </Style>
         <Style TargetType="TextBlock" x:Key="Style_TextBlock_2">
             <Setter Property="FontSize" Value="16"/>
-            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{ThemeResource SystemControlPageTextBaseMediumBrush}"/>
         </Style>
         <Style TargetType="Button" x:Key="Style_Button_1">
             <Setter Property="FontSize" Value="16"/>
@@ -31,94 +31,99 @@
     </Page.TopAppBar>
 
 
-
-    <Grid Margin="12">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
-        <TextBlock Text="Imagefap Downloader"  Margin="0,0,0,8"
+        <Grid Margin="12">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="Imagefap Downloader"  Margin="0,0,0,8"
                    HorizontalAlignment="Center" FontSize="72" FontWeight="Bold"/>
-        <Grid Margin="0,0,0,8" Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBox Grid.Column="0" FontSize="16" Text="{x:Bind UrlInput, Mode=TwoWay}"
+            <Grid Margin="0,0,0,8" Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0" FontSize="16" Text="{x:Bind UrlInput, Mode=TwoWay}"
                      PlaceholderText="Please enter the url..."/>
-            <Button Grid.Column="1" x:Name="Button_Add"
+                <Button Grid.Column="1" x:Name="Button_Add"
                         Style="{StaticResource Style_Button_1}" Margin="8,0,0,0" 
                         ToolTipService.ToolTip="Add url to the download list."
                     Click="Button_Add_Click">
-                <Button.Content>
-                    <StackPanel Orientation="Horizontal">
-                        <SymbolIcon Symbol="Add" Margin="0,0,4,0"/>
-                        <TextBlock Text="Add"/>
-                    </StackPanel>
-                </Button.Content>
-            </Button>
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <SymbolIcon Symbol="Add" Margin="0,0,4,0"/>
+                            <TextBlock Text="Add"/>
+                        </StackPanel>
+                    </Button.Content>
+                </Button>
 
-        </Grid>
-        <ListView SelectionMode="Single" Grid.Row="2" Margin="0,0,0,8" 
+            </Grid>
+            <ListView SelectionMode="Single" Grid.Row="2" Margin="0,0,0,8" 
                   ItemsSource="{x:Bind AlbumCollection}" x:Name="ListView_1">
-            <ListView.ItemTemplate>
-                <DataTemplate x:DataType="local:Album" >
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="auto"/>
-                            <ColumnDefinition Width="auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Button Background="Transparent" VerticalAlignment="Center"
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="local:Album" >
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="auto"/>
+                                <ColumnDefinition Width="auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Background="Transparent" VerticalAlignment="Center"
                                 ToolTipService.ToolTip="Delete this album" x:Name="Button_Delete"
                                 Click="Button_Delete_Click" >
-                            <SymbolIcon Symbol="{x:Bind DownloadStateIcon,Mode=OneWay}"/>
-                        </Button>
-                        <TextBlock Style="{StaticResource Style_TextBlock_1}" 
+                                <SymbolIcon Symbol="{x:Bind DownloadStateIcon,Mode=OneWay}"/>
+                            </Button>
+                            <TextBlock Style="{StaticResource Style_TextBlock_1}" 
                                Text="{x:Bind AlbumUrlUserInput}" VerticalAlignment="Center"
                                    Margin="12,0" Grid.Column="1" Width="auto" />
-                        <!--<SymbolIcon Symbol="{x:Bind DownloadStateIcon,Mode=OneWay}" 
+                            <!--<SymbolIcon Symbol="{x:Bind DownloadStateIcon,Mode=OneWay}" 
                                     Grid.Column="2"/>-->
-                        <!--<TextBlock Style="{StaticResource Style_TextBlock_1}"
+                            <!--<TextBlock Style="{StaticResource Style_TextBlock_1}"
                                    Text="{Binding IsDownloaded}" Grid.Column="3"/>-->
-                    </Grid>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
-        <Grid Grid.Row="3" Margin="0,0,0,8">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="auto"/>
-                <!--<ColumnDefinition Width="auto"/>-->
-            </Grid.ColumnDefinitions>
-            <Button Style="{StaticResource Style_Button_1}" 
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+            <Grid Grid.Row="3" >
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="auto"/>
+                    <!--<ColumnDefinition Width="auto"/>-->
+                </Grid.ColumnDefinitions>
+                <Button Style="{StaticResource Style_Button_1}" 
                     ToolTipService.ToolTip="Select download folder" x:Name="Button_SelectFolder"
                     Click="Button_SelectFolder_Click">
-                <Button.Content>
-                    <StackPanel Orientation="Horizontal">
-                        <SymbolIcon Symbol="Folder" Margin="0,0,4,0"/>
-                        <TextBlock Text="To"/>
-                    </StackPanel>
-                </Button.Content>
-            </Button>
-            <TextBlock FontSize="16" Grid.Column="1" Text="{x:Bind DownloadFolder.Path,Mode=OneWay}"
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <SymbolIcon Symbol="Folder" Margin="0,0,4,0"/>
+                            <TextBlock Text="To"/>
+                        </StackPanel>
+                    </Button.Content>
+                </Button>
+                <TextBlock FontSize="16" Grid.Column="1" Text="{x:Bind DownloadFolder.Path,Mode=OneWay}"
                        VerticalAlignment="Center"/>
-            <ToggleButton Grid.Column="2" x:Name="ToggleButton_RunOrPause" 
+                <ToggleButton Grid.Column="2" x:Name="ToggleButton_RunOrPause" 
                           Click="ToggleButton_RunOrPause_Click" Width="256">
-                <ToggleButton.Content>
-                    <StackPanel Orientation="Horizontal">
-                        <SymbolIcon Symbol="Download" Margin="0,0,4,0"/>
-                        <TextBlock Text="Download/Pause" x:Name="TextBlock_DownloadOrPause"/>
-                    </StackPanel>
-                </ToggleButton.Content>
-            </ToggleButton>
+                    <ToggleButton.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <SymbolIcon Symbol="Download" Margin="0,0,4,0"/>
+                            <TextBlock Text="{x:Bind getToggleButtonText(ToggleButton_RunOrPause.IsChecked),Mode=OneWay}" x:Name="TextBlock_DownloadOrPause"/>
+                        </StackPanel>
+                    </ToggleButton.Content>
+                </ToggleButton>
+            </Grid>
         </Grid>
-        <Grid Grid.Row="4" Background="LightGray">
+    
+        <Grid Grid.Row="1" Background="LightGray" Height="24">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
@@ -126,19 +131,19 @@
             </Grid.ColumnDefinitions>
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Download Count:" Style="{StaticResource Style_TextBlock_2}"/>
-                <TextBlock Style="{StaticResource Style_TextBlock_1}" Text="{x:Bind DownloadImagesCount,Mode=OneWay}"
+                <TextBlock Style="{StaticResource Style_TextBlock_2}" Text="{x:Bind DownloadImagesCount,Mode=OneWay}"
                        Grid.Column="1" Margin="12,0"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Grid.Column="1">
                 <TextBlock Text="Download Size:" Style="{StaticResource Style_TextBlock_2}"
                        Grid.Column="2"/>
-                <TextBlock Style="{StaticResource Style_TextBlock_1}" Text="{x:Bind sys:String.Format('{0}MB',DownloadImagesSize), Mode=OneWay}"
+                <TextBlock Style="{StaticResource Style_TextBlock_2}" Text="{x:Bind sys:String.Format('{0}MB',DownloadImagesSize), Mode=OneWay}"
                        Grid.Column="3" Margin="12,0"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Grid.Column="2">
                 <TextBlock Text="Download Fail:" Style="{StaticResource Style_TextBlock_2}"
                        Grid.Column="4"/>
-                <TextBlock Style="{StaticResource Style_TextBlock_1}" Text="{x:Bind PictureFailCollection.Count, Mode=OneWay}"
+                <TextBlock Style="{StaticResource Style_TextBlock_2}" Text="{x:Bind PictureFailCollection.Count, Mode=OneWay}"
                        Grid.Column="5" Margin="12,0"/>
             </StackPanel>
         </Grid>

@@ -89,6 +89,13 @@ namespace UWP_ImagefapDownloader
                 OnPropertyChanged("DownloadFolder");
             }
         }
+        //当前的状态，是否是暂停。
+        private bool isPause = false;
+        //当前toggle button上面显示的文字
+        private bool toggleButtonTextIsPause = false;
+        ////上一个操作是否是暂停
+        //private bool isLastClickPause = false;
+
 
         //后台值变动，前台能随时更新UI
         public event PropertyChangedEventHandler PropertyChanged;
@@ -143,12 +150,25 @@ namespace UWP_ImagefapDownloader
             ToggleButton toggleButton = sender as ToggleButton;
             if (toggleButton.IsChecked == true)
             {
+                if (!isPause)
+                {
                 startDonwload();
+                }
+                else
+                {
+                    isPause = false;
+                }
             }
             else
             {
                 //TODO: 暂停
+                isPause = true;
             }
+        }
+
+        private void pause()
+        {
+
         }
 
         //开始主流程，解析和下载流程
@@ -224,6 +244,11 @@ namespace UWP_ImagefapDownloader
                 picNum++;
                 Picture picture = await findPictureInImagePage(album.AlbumName, picNum, imagePageUrl);
                 album.PictureList.Add(picture);
+                //让程序暂停，但已经开始的Task还是会完成下载。
+                while (isPause)
+                {
+                    await Task.Delay(1000);
+                }
                 imageDownload(picture);
             }
             album.IsDownloaded = true;
@@ -294,10 +319,10 @@ namespace UWP_ImagefapDownloader
 
         }
 
-        private void HandleDownloadAsync(DownloadOperation download, bool v)
-        {
-            //throw new NotImplementedException();
-        }
+        //private void HandleDownloadAsync(DownloadOperation download, bool v)
+        //{
+        //    //throw new NotImplementedException();
+        //}
 
         private async void writeStringToFile(string fileName, string content)
         {
@@ -316,6 +341,40 @@ namespace UWP_ImagefapDownloader
             DownloadImagesSize = 0;
             DownloadImagesCount = 0;
             ToggleButton_RunOrPause.IsChecked = false;
+            toggleButtonTextIsPause = false;
+            this.Bindings.Update();
+        }
+
+        public string getToggleButtonText(bool? isChecked)
+        {
+            //if (!isPause && !isChecked)
+            //{
+            //    return "Start Download";
+            //}
+            //else if (isChecked)
+            //{
+            //    return "Pause";
+            //}
+            //else
+            //{
+            //    return "Resume Download";
+            //}
+            if (isChecked==true)
+            {
+                toggleButtonTextIsPause = true;
+                return "Pause";
+            }
+            else
+            {
+                if (toggleButtonTextIsPause)
+                {
+                    return "Resume Download";
+                }
+                else
+                {
+                    return "Start Download";
+                }
+            }
         }
     }
 }
