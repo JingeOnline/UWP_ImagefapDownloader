@@ -5,6 +5,8 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Media.Core;
+using Windows.Media.Playback;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -22,6 +24,7 @@ namespace UWP_ImagefapDownloader
         public int DownloadImagesCount { get; set; }
         public List<Picture> PictureFailList { get; set; }
         public string DownloadImagesSize { get; set; }
+        public bool IsSoundOn { get; set; }
 
 
         public ContentDialog_DownloadFinish(MainPage mainPage)
@@ -29,12 +32,22 @@ namespace UWP_ImagefapDownloader
             DownloadImagesCount = mainPage.DownloadImagesCount;
             PictureFailList = mainPage.PictureFailCollection.ToList<Picture>();
             DownloadImagesSize = mainPage.DownloadImagesSize.ToString() + " MB";
+            IsSoundOn = mainPage.IsSoundOn;
 
             this.InitializeComponent();
+
             TextBlock_Result.Text = "Download images count: " + DownloadImagesCount + "\n" +
                 "Download images size: " + DownloadImagesSize + "\n" +
                 "Fail to download images count: " + PictureFailList.Count;
             StackPanel_FailList.Visibility = needShowFailList();
+
+            //播放声音提示
+            if (IsSoundOn)
+            {
+                var player = new MediaPlayer();
+                player.Source = MediaSource.CreateFromUri(new Uri("ms-winsoundevent:Notification.Looping.Alarm3"));
+                player.Play();
+            }
         }
 
         public Visibility needShowFailList()

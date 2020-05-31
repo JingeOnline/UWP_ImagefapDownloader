@@ -18,6 +18,15 @@
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="Foreground" Value="{ThemeResource SystemControlPageTextBaseMediumBrush}"/>
         </Style>
+        <Style TargetType="TextBlock" x:Key="Style_TextBlock_3">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Foreground" Value="{ThemeResource SystemAltHighColor}"/>
+        </Style>
+        <Style TargetType="TextBlock" x:Key="Style_TextBlock_4">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{ThemeResource SystemAccentColorLight3}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
         <Style TargetType="Button" x:Key="Style_Button_1">
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="Width" Value="72"/>
@@ -25,8 +34,10 @@
     </Page.Resources>
 
     <Page.TopAppBar>
-        <CommandBar IsOpen="False" ClosedDisplayMode="Compact" IsSticky="True">
-            <AppBarButton Icon="Setting" Label="Setting"/>
+        <CommandBar IsOpen="False" ClosedDisplayMode="Compact" IsSticky="True" 
+                    Background="{ThemeResource SystemAccentColorDark1}" Foreground="{ThemeResource SystemAltHighColor}">
+            <AppBarButton Icon="Setting" Label="Setting" x:Name="AppBarButton_Setting"
+                          Click="AppBarButton_Setting_Click" Foreground="{ThemeResource SystemAltHighColor}"/>
         </CommandBar>
     </Page.TopAppBar>
 
@@ -36,6 +47,7 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
+        <!--App主体部分，带有12的边距-->
         <Grid Margin="12">
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto"/>
@@ -43,15 +55,18 @@
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="auto"/>
             </Grid.RowDefinitions>
-            <TextBlock Text="Imagefap Downloader"  Margin="0,0,0,8"
+            <!--app标题logo-->
+            <TextBlock Text="ImageFap Downloader"  Margin="0,0,0,8" Foreground="{ThemeResource SystemAccentColor}"
                    HorizontalAlignment="Center" FontSize="72" FontWeight="Bold"/>
+            <!--用户添加URL的一行控件-->
             <Grid Margin="0,0,0,8" Grid.Row="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBox Grid.Column="0" FontSize="16" Text="{x:Bind UrlInput, Mode=TwoWay}"
-                     PlaceholderText="Please enter the url..."/>
+                     PlaceholderText="Please enter the url..." x:Name="TextBox_UrlInput"
+                         Paste="TextBox_UrlInput_Paste"/>
                 <Button Grid.Column="1" x:Name="Button_Add"
                         Style="{StaticResource Style_Button_1}" Margin="8,0,0,0" 
                         ToolTipService.ToolTip="Add url to the download list."
@@ -63,8 +78,8 @@
                         </StackPanel>
                     </Button.Content>
                 </Button>
-
             </Grid>
+            <!--下载列表-->
             <ListView SelectionMode="Single" Grid.Row="2" Margin="0,0,0,8" 
                   ItemsSource="{x:Bind AlbumCollection}" x:Name="ListView_1">
                 <ListView.ItemTemplate>
@@ -92,6 +107,7 @@
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
+            <!--下载按钮所在行的控件-->
             <Grid Grid.Row="3" >
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="auto"/>
@@ -122,31 +138,56 @@
                 </ToggleButton>
             </Grid>
         </Grid>
-    
+        <!--底部状态栏，左右没有边距-->
         <Grid Grid.Row="1" Background="LightGray" Height="24">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Download Count:" Style="{StaticResource Style_TextBlock_2}"/>
-                <TextBlock Style="{StaticResource Style_TextBlock_2}" Text="{x:Bind DownloadImagesCount,Mode=OneWay}"
-                       Grid.Column="1" Margin="12,0"/>
+            <StackPanel Orientation="Horizontal" Grid.Column="0">
+                <TextBlock Text="Album Count:" Style="{StaticResource Style_TextBlock_2}" Margin="12,0"/>
+                <TextBlock Style="{StaticResource Style_TextBlock_2}" Text="{x:Bind AlbumCollection.Count,Mode=OneWay}"
+                       Margin="4,0"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Grid.Column="1">
-                <TextBlock Text="Download Size:" Style="{StaticResource Style_TextBlock_2}"
-                       Grid.Column="2"/>
-                <TextBlock Style="{StaticResource Style_TextBlock_2}" Text="{x:Bind sys:String.Format('{0}MB',DownloadImagesSize), Mode=OneWay}"
-                       Grid.Column="3" Margin="12,0"/>
+                <TextBlock Text="Download Count:" Style="{StaticResource Style_TextBlock_2}" Margin="12,0"/>
+                <TextBlock Style="{StaticResource Style_TextBlock_2}" Text="{x:Bind DownloadImagesCount,Mode=OneWay}"
+                       Margin="4,0"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Grid.Column="2">
-                <TextBlock Text="Download Fail:" Style="{StaticResource Style_TextBlock_2}"
-                       Grid.Column="4"/>
+                <TextBlock Text="Download Size:" Style="{StaticResource Style_TextBlock_2}" Margin="12,0"/>
+                <TextBlock Style="{StaticResource Style_TextBlock_2}" Text="{x:Bind sys:String.Format('{0}MB',DownloadImagesSize), Mode=OneWay}"
+                       Margin="4,0"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Grid.Column="3">
+                <TextBlock Text="Download Fail:" Style="{StaticResource Style_TextBlock_2}" Margin="12,0"/>
                 <TextBlock Style="{StaticResource Style_TextBlock_2}" Text="{x:Bind PictureFailCollection.Count, Mode=OneWay}"
-                       Grid.Column="5" Margin="12,0"/>
+                       Margin="4,0"/>
             </StackPanel>
         </Grid>
+        
+        <!--弹出的setting面板-->
+        <SplitView  DisplayMode="Overlay" Name="SplitView_Setting" PanePlacement="Right"
+                   IsPaneOpen="False" Grid.RowSpan="2" PaneBackground="{ThemeResource SystemAccentColorDark1}">
+            <SplitView.Pane>
+                <ScrollViewer VerticalScrollMode="Auto" HorizontalScrollMode="Disabled">
+                    <StackPanel Margin="12">
+                        <TextBlock Text="Remember Download Folder" Style="{StaticResource Style_TextBlock_3}"/>
+                        <TextBlock Text="Set current download folder path as default." Style="{StaticResource Style_TextBlock_4}"/>
+                        <ToggleSwitch Foreground="{ThemeResource SystemAltHighColor}" IsOn="True"/>
+                        <TextBlock Text="Download Albums In Individual Folders" Style="{StaticResource Style_TextBlock_3}"/>
+                        <TextBlock Text="Create a folder before download the album to save the pictures separately." Style="{StaticResource Style_TextBlock_4}"/>
+                        <ToggleSwitch Foreground="{ThemeResource SystemAltHighColor}" IsOn="False"/>
+                        <TextBlock Text="Play Sound Notification" Style="{StaticResource Style_TextBlock_3}"/>
+                        <TextBlock Text="Play sound notification after all download tasks complete." Style="{StaticResource Style_TextBlock_4}"/>
+                        <ToggleSwitch Foreground="{ThemeResource SystemAltHighColor}" IsOn="True" x:Name="ToggleSwitch_CompleteSound"
+                                      Toggled="ToggleSwitch_CompleteSound_Toggled"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </SplitView.Pane>
+        </SplitView>
     </Grid>
 
 </Page>

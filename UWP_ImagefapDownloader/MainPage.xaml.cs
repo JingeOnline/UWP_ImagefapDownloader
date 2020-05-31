@@ -11,9 +11,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Media.Core;
+using Windows.Media.Playback;
 using Windows.Networking.BackgroundTransfer;
 using Windows.Storage;
 using Windows.Storage.Streams;
+using Windows.UI.Core.Preview;
 using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -49,21 +52,22 @@ namespace UWP_ImagefapDownloader
         }
         //URL对应的相册List
         public ObservableCollection<Album> AlbumCollection = new ObservableCollection<Album>();
+
         //当前下载的图片文件名称
         public string CurrentImageName { get; set; }
         //当前已下载文件的总大小
-        private long downloadImagesSize=0;
-        public long DownloadImagesSize 
+        private long downloadImagesSize = 0;
+        public long DownloadImagesSize
         {
-            get { return downloadImagesSize/1024/1024; }
+            get { return downloadImagesSize / 1024 / 1024; }
             set
             {
                 OnPropertyChanged("DownloadImagesSize");
             }
         }
         //当前已下载的图片总数量
-        private int downloadImagesCount=0;
-        public int DownloadImagesCount 
+        private int downloadImagesCount = 0;
+        public int DownloadImagesCount
         {
             get { return downloadImagesCount; }
             set
@@ -76,7 +80,9 @@ namespace UWP_ImagefapDownloader
         public ObservableCollection<Picture> PictureFailCollection = new ObservableCollection<Picture>();
         //下载路径（默认值为windows相册）
         //private string downloadFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-        private StorageFolder downloadFolder = KnownFolders.PicturesLibrary;
+        //private StorageFolder downloadFolder = KnownFolders.PicturesLibrary;
+        //private 
+        private StorageFolder downloadFolder;
         public StorageFolder DownloadFolder
         {
             get
@@ -87,14 +93,18 @@ namespace UWP_ImagefapDownloader
             {
                 downloadFolder = value;
                 OnPropertyChanged("DownloadFolder");
+                setAppSettingDownloadFolderPath(value);
             }
         }
         //当前的状态，是否是暂停。
         private bool isPause = false;
         //当前toggle button上面显示的文字
         private bool toggleButtonTextIsPause = false;
-        ////上一个操作是否是暂停
-        //private bool isLastClickPause = false;
+        //应用程序的setting
+        private static Windows.Storage.ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+        //是否播放下载完成的提示音
+        public bool IsSoundOn { get; set; }
+
 
 
         //后台值变动，前台能随时更新UI
@@ -104,6 +114,12 @@ namespace UWP_ImagefapDownloader
         public MainPage()
         {
             this.InitializeComponent();
+            myInitialize();
+        }
+
+        public void myInitialize()
+        {
+            getAppSetting();
         }
 
 
@@ -152,7 +168,7 @@ namespace UWP_ImagefapDownloader
             {
                 if (!isPause)
                 {
-                startDonwload();
+                    startDonwload();
                 }
                 else
                 {
@@ -166,10 +182,6 @@ namespace UWP_ImagefapDownloader
             }
         }
 
-        private void pause()
-        {
-
-        }
 
         //开始主流程，解析和下载流程
         private async void startDonwload()
@@ -344,22 +356,10 @@ namespace UWP_ImagefapDownloader
             toggleButtonTextIsPause = false;
             this.Bindings.Update();
         }
-
+        //ToggleButton绑定的Text
         public string getToggleButtonText(bool? isChecked)
         {
-            //if (!isPause && !isChecked)
-            //{
-            //    return "Start Download";
-            //}
-            //else if (isChecked)
-            //{
-            //    return "Pause";
-            //}
-            //else
-            //{
-            //    return "Resume Download";
-            //}
-            if (isChecked==true)
+            if (isChecked == true)
             {
                 toggleButtonTextIsPause = true;
                 return "Pause";
@@ -375,6 +375,88 @@ namespace UWP_ImagefapDownloader
                     return "Start Download";
                 }
             }
+        }
+        //获得app的setting
+        private async void getAppSetting()
+        {
+            object downloadFolderPath = localSettings.Values["DownloadFolderPath"];
+            if (downloadFolderPath == null)
+            {
+                setDownloadFolderToDefault();
+            }
+            else
+            {
+                try
+                {
+                    DownloadFolder = await StorageFolder.GetFolderFromPathAsync(downloadFolderPath.ToString());
+                }
+                catch
+                {
+                    setDownloadFolderToDefault();
+                }
+            }
+
+            object isOn = localSettings.Values["IsSoundOn"];
+            if (isOn == null)
+            {
+                IsSoundOn = true;
+            }
+            else
+            {
+                IsSoundOn = isOn.ToString().Equals("true", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+        //设置app的setting
+        private void setAppSettingDownloadFolderPath(StorageFolder folder)
+        {
+            localSettings.Values["DownloadFolderPath"] = folder.Path;
+        }
+        //设置下载路径到默认的“图片相册”
+        private async void setDownloadFolderToDefault()
+        {
+            var pictureLibrary = await StorageLibrary.GetLibraryAsync(KnownLibraryId.Pictures);
+            DownloadFolder = pictureLibrary.SaveFolder;
+        }
+
+        //用户点击CommandBar中的Setting按钮
+        private void AppBarButton_Setting_Click(object sender, RoutedEventArgs e)
+        {
+            SplitView_Setting.IsPaneOpen = !SplitView_Setting.IsPaneOpen;
+        }
+
+        //用户粘贴URL到TextBox,粘贴失败会播放音效
+        private async void TextBox_UrlInput_Paste(object sender, TextControlPasteEventArgs e)
+        {
+            //AlbumCollection.Add(new Album(e.ToString));
+
+            var dataPackageView = Windows.ApplicationModel.DataTransfer.Clipboard.GetContent();
+            if (dataPackageView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.Text))
+            {
+                try
+                {
+                    var text = await dataPackageView.GetTextAsync();
+                    AlbumCollection.Add(new Album(text));
+                    //ElementSoundPlayer.State = ElementSoundPlayerState.On;
+                    //ElementSoundPlayer.Play(ElementSoundKind.Show);
+                }
+                catch
+                {
+                    ElementSoundPlayer.State = ElementSoundPlayerState.On;
+                    ElementSoundPlayer.Play(ElementSoundKind.Hide);
+                    //var player = new MediaPlayer();
+                    //player.Source = MediaSource.CreateFromUri(new Uri("ms-winsoundevent:Notification.Looping.Alarm2"));
+                    //player.Play();
+                }
+            }
+
+            TextBox textbox = sender as TextBox;
+            textbox.Text = string.Empty;
+        }
+
+        private void ToggleSwitch_CompleteSound_Toggled(object sender, RoutedEventArgs e)
+        {
+            IsSoundOn = (sender as ToggleSwitch).IsOn;
+            localSettings.Values["IsSoundOn"] = IsSoundOn.ToString();
         }
     }
 }
