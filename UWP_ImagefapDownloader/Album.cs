@@ -25,7 +25,8 @@ namespace UWP_ImagefapDownloader
         private bool isDownloaded = false;
         //下载状态的图标
         private Symbol downloadStateIcon=Symbol.Delete;
-        //删除按钮的可见性
+        //该相册的URL是否有效，能否被下载
+        private bool isUrlValid = true;
 
 
         public String AlbumUrlUserInput
@@ -110,6 +111,17 @@ namespace UWP_ImagefapDownloader
             { 
                 downloadStateIcon = value;
                 OnPropertyChanged("DownloadStateIcon");
+            }
+        }
+
+        public bool IsUrlValid
+        {
+            get { return isUrlValid; }
+            set
+            {
+                isUrlValid = value;
+                DownloadStateIcon = Symbol.Important;
+                OnPropertyChanged("IsUrlValid");
             }
         }
 

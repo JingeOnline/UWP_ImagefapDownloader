@@ -21,6 +21,7 @@
         <Style TargetType="TextBlock" x:Key="Style_TextBlock_3">
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="Foreground" Value="{ThemeResource SystemAltHighColor}"/>
+            <Setter Property="Margin" Value="0,4,0,4"/>
         </Style>
         <Style TargetType="TextBlock" x:Key="Style_TextBlock_4">
             <Setter Property="FontSize" Value="12"/>
@@ -56,7 +57,7 @@
                 <RowDefinition Height="auto"/>
             </Grid.RowDefinitions>
             <!--app标题logo-->
-            <TextBlock Text="ImageFap Downloader"  Margin="0,0,0,8" Foreground="{ThemeResource SystemAccentColor}"
+            <TextBlock Text="ImageFap Downloader"  Margin="0,0,0,12" Foreground="{ThemeResource SystemAccentColor}"
                    HorizontalAlignment="Center" FontSize="72" FontWeight="Bold"/>
             <!--用户添加URL的一行控件-->
             <Grid Margin="0,0,0,8" Grid.Row="1">
@@ -131,7 +132,7 @@
                           Click="ToggleButton_RunOrPause_Click" Width="256">
                     <ToggleButton.Content>
                         <StackPanel Orientation="Horizontal">
-                            <SymbolIcon Symbol="Download" Margin="0,0,4,0"/>
+                            <SymbolIcon Symbol="{x:Bind getToggleButtonIcon(ToggleButton_RunOrPause.IsChecked),Mode=OneWay}" Margin="0,0,4,0"/>
                             <TextBlock Text="{x:Bind getToggleButtonText(ToggleButton_RunOrPause.IsChecked),Mode=OneWay}" x:Name="TextBlock_DownloadOrPause"/>
                         </StackPanel>
                     </ToggleButton.Content>
@@ -174,16 +175,30 @@
             <SplitView.Pane>
                 <ScrollViewer VerticalScrollMode="Auto" HorizontalScrollMode="Disabled">
                     <StackPanel Margin="12">
+                        <!--是否保存当前的下载路径-->
                         <TextBlock Text="Remember Download Folder" Style="{StaticResource Style_TextBlock_3}"/>
                         <TextBlock Text="Set current download folder path as default." Style="{StaticResource Style_TextBlock_4}"/>
-                        <ToggleSwitch Foreground="{ThemeResource SystemAltHighColor}" IsOn="True"/>
-                        <TextBlock Text="Download Albums In Individual Folders" Style="{StaticResource Style_TextBlock_3}"/>
-                        <TextBlock Text="Create a folder before download the album to save the pictures separately." Style="{StaticResource Style_TextBlock_4}"/>
-                        <ToggleSwitch Foreground="{ThemeResource SystemAltHighColor}" IsOn="False"/>
-                        <TextBlock Text="Play Sound Notification" Style="{StaticResource Style_TextBlock_3}"/>
+                        <ToggleSwitch Foreground="{ThemeResource SystemAltHighColor}" IsOn="{x:Bind NeedSaveDownloadFolder,Mode=TwoWay}"
+                                      Margin="0,0,0,8"/>
+                        <!--是否播放下载结束提示音-->
+                        <TextBlock Text="Sound Notification" Style="{StaticResource Style_TextBlock_3}"/>
                         <TextBlock Text="Play sound notification after all download tasks complete." Style="{StaticResource Style_TextBlock_4}"/>
-                        <ToggleSwitch Foreground="{ThemeResource SystemAltHighColor}" IsOn="True" x:Name="ToggleSwitch_CompleteSound"
-                                      Toggled="ToggleSwitch_CompleteSound_Toggled"/>
+                        <ToggleSwitch Foreground="{ThemeResource SystemAltHighColor}" IsOn="{x:Bind IsSoundOn, Mode=TwoWay}" 
+                                      x:Name="ToggleSwitch_CompleteSound" Margin="0,0,0,8"/>
+                        <!--是否需要下载到独立文件夹-->
+                        <TextBlock Text="Download Albums In Individual Folders" Style="{StaticResource Style_TextBlock_3}"/>
+                        <TextBlock Text="Create a folder before download the album to save the pictures separately." 
+                                   Style="{StaticResource Style_TextBlock_4}"/>
+                        <ToggleSwitch Foreground="{ThemeResource SystemAltHighColor}" IsOn="{x:Bind NeedIndividualFolder,Mode=TwoWay}" 
+                                      x:Name="ToggleSwitch_NeedIndividualFolders" Margin="0,0,0,8"/>
+                        <!--是否需要处理用户在文本框的粘贴行为-->
+                        <TextBlock Text="* Paste Text Automatically Insert" Style="{StaticResource Style_TextBlock_3}"/>
+                        <TextBlock Text="When paste text in the url textbox, automatically insert this url to the download tasks list." 
+                                   Style="{StaticResource Style_TextBlock_4}" Margin="0,0,0,8"/>
+                        <TextBlock Text="WARNING: This function is not reliable, sometimes the automatic insert can be failed. So pay attention when turn it on. If insert fails, it will notice you by a special sound." 
+                                   Style="{StaticResource Style_TextBlock_4}" Foreground="Yellow"/>
+                        <ToggleSwitch Foreground="{ThemeResource SystemAltHighColor}" IsOn="{x:Bind EnablePaste,Mode=TwoWay}" 
+                                      Margin="0,0,0,8"/>
                     </StackPanel>
                 </ScrollViewer>
             </SplitView.Pane>

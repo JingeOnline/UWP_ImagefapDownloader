@@ -50,8 +50,10 @@ namespace UWP_ImagefapDownloader
                 OnPropertyChanged("UrlInput");
             }
         }
-        //URL对应的相册List
+        //URL对应的相册列表
         public ObservableCollection<Album> AlbumCollection = new ObservableCollection<Album>();
+        //URL解析失败相册列表
+        public ObservableCollection<Album> InvalidAlbums = new ObservableCollection<Album>();
 
         //当前下载的图片文件名称
         public string CurrentImageName { get; set; }
@@ -93,7 +95,7 @@ namespace UWP_ImagefapDownloader
             {
                 downloadFolder = value;
                 OnPropertyChanged("DownloadFolder");
-                setAppSettingDownloadFolderPath(value);
+                localSettings.Values["DownloadFolderPath"] = value.Path;
             }
         }
         //当前的状态，是否是暂停。
@@ -103,7 +105,60 @@ namespace UWP_ImagefapDownloader
         //应用程序的setting
         private static Windows.Storage.ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
         //是否播放下载完成的提示音
-        public bool IsSoundOn { get; set; }
+        private bool isSoundOn = true;
+        public bool IsSoundOn
+        {
+            get { return isSoundOn; }
+            set
+            {
+                isSoundOn = value;
+                OnPropertyChanged("IsSoundOn");
+                localSettings.Values["IsSoundOn"] = value.ToString();
+            }
+        }
+        //是否下载到独立的文件夹
+        private bool needIndividualFolder = false;
+        public bool NeedIndividualFolder
+        {
+            get { return needIndividualFolder; }
+            set
+            {
+                needIndividualFolder = value;
+                OnPropertyChanged("NeedIndividualFolder");
+                if (NeedSaveDownloadFolder)
+                {
+                    localSettings.Values["NeedIndividualFolder"] = value.ToString();
+                }
+            }
+        }
+        //是否保存下载路径
+        private bool needSaveDownloadFolder = true;
+
+        public bool NeedSaveDownloadFolder
+        {
+            get { return needSaveDownloadFolder; }
+            set
+            {
+                needSaveDownloadFolder = value;
+                OnPropertyChanged("NeedSaveDownloadFolder");
+                localSettings.Values["NeedSaveDownloadFolder"] = value.ToString();
+                setDefaultDownloadFolder();
+            }
+        }
+
+        //是否允许把粘贴内容自动添加到下载列表
+        private bool enablePaste = false;
+
+        public bool EnablePaste
+        {
+            get { return enablePaste; }
+            set
+            {
+                enablePaste = value;
+                OnPropertyChanged("EnablePaste");
+                localSettings.Values["EnablePaste"] = value.ToString();
+            }
+        }
 
 
 
@@ -189,11 +244,25 @@ namespace UWP_ImagefapDownloader
             for (int i = 0; i < AlbumCollection.Count; i++)
             {
                 //ListView_1.SelectedItem = AlbumCollection[i];
-                AlbumCollection[i] = await getImagePagesUrlsFromAlbum(AlbumCollection[i]);
+                Album album = await getImagePagesUrlsFromAlbum(AlbumCollection[i]);
+                if (album == null)
+                {
+                    AlbumCollection[i].IsUrlValid = false;
+                    InvalidAlbums.Add(AlbumCollection[i]);
+                    continue;
+                }
+                AlbumCollection[i] = album;
                 await donwloadAlbumObject(AlbumCollection[i]);
 
             }
-            //await new MessageDialog("下载完成", "下载完成").ShowAsync();
+
+            //下载完成播放提示音
+            if (IsSoundOn)
+            {
+                var player = new MediaPlayer();
+                player.Source = MediaSource.CreateFromUri(new Uri("ms-winsoundevent:Notification.Looping.Alarm3"));
+                player.Play();
+            }
             ContentDialog_DownloadFinish dialog = new ContentDialog_DownloadFinish(this);
             await dialog.ShowAsync();
             resetData();
@@ -219,7 +288,14 @@ namespace UWP_ImagefapDownloader
             string pattern = @"/pictures/(\d{7,})/";
             //构建一次能显示所有照片的页面url
             Match match = Regex.Match(url, pattern);
+
             string id = match.Value;
+
+            if (string.IsNullOrEmpty(id))
+            {
+                return null;
+            }
+
             id = id.Remove(0, 10);
             id = id.Remove(id.Length - 1);
             url = url + "?gid=" + id + "&view=2";
@@ -250,6 +326,14 @@ namespace UWP_ImagefapDownloader
         //下载一个解析好的Album对象，把每张图片存入本地
         private async Task donwloadAlbumObject(Album album)
         {
+            //判断是否需要为相册创建单独的文件夹
+            StorageFolder saveFolder = DownloadFolder;
+            if (NeedIndividualFolder)
+            {
+               saveFolder=await DownloadFolder.CreateFolderAsync(album.AlbumName+"_ImageFapDownloader",CreationCollisionOption.GenerateUniqueName);
+            }
+
+
             int picNum = 0;
             foreach (string imagePageUrl in album.ImagePageUrlList)
             {
@@ -261,7 +345,9 @@ namespace UWP_ImagefapDownloader
                 {
                     await Task.Delay(1000);
                 }
-                imageDownload(picture);
+
+                imageDownload(picture, saveFolder);
+
             }
             album.IsDownloaded = true;
             //album.DownloadStateIcon = Symbol.Accept;
@@ -305,7 +391,7 @@ namespace UWP_ImagefapDownloader
         }
 
         //下载图片并写入到本地
-        private async void imageDownload(Picture picture)
+        private async void imageDownload(Picture picture, StorageFolder saveFolder)
         {
             Uri uri = new System.Uri(picture.PictureUrl);
             HttpClient client = new HttpClient();
@@ -313,7 +399,7 @@ namespace UWP_ImagefapDownloader
             {
                 byte[] buffer = await client.GetByteArrayAsync(uri);
                 //创建新文件，如果该文件存在则自动在末尾追加一个Unique名称。
-                StorageFile file = await DownloadFolder.CreateFileAsync(picture.PictureFileName, options: CreationCollisionOption.GenerateUniqueName);
+                StorageFile file = await saveFolder.CreateFileAsync(picture.PictureFileName, options: CreationCollisionOption.GenerateUniqueName);
                 using (Stream stream = await file.OpenStreamForWriteAsync())
                 {
                     stream.Write(buffer, 0, buffer.Length);
@@ -348,12 +434,13 @@ namespace UWP_ImagefapDownloader
         public void resetData()
         {
             AlbumCollection.Clear();
+            InvalidAlbums.Clear();
             PictureFailCollection.Clear();
+            ToggleButton_RunOrPause.IsChecked = false;
+            toggleButtonTextIsPause = false;
             downloadImagesSize = 0;
             DownloadImagesSize = 0;
             DownloadImagesCount = 0;
-            ToggleButton_RunOrPause.IsChecked = false;
-            toggleButtonTextIsPause = false;
             this.Bindings.Update();
         }
         //ToggleButton绑定的Text
@@ -376,45 +463,82 @@ namespace UWP_ImagefapDownloader
                 }
             }
         }
+        //ToggleButton绑定的Symble图标
+        public Symbol getToggleButtonIcon(bool? isCheked)
+        {
+            if (isCheked == true)
+            {
+                return Symbol.Clock;
+            }
+            else
+            {
+                return Symbol.Download;
+            }
+        }
+
         //获得app的setting
         private async void getAppSetting()
         {
-            object downloadFolderPath = localSettings.Values["DownloadFolderPath"];
-            if (downloadFolderPath == null)
+            //获取用户对是否保存下载路径的设置
+            object needSavePath = localSettings.Values["NeedSaveDownloadFolder"];
+            if (needSavePath != null)
             {
-                setDownloadFolderToDefault();
+                NeedSaveDownloadFolder = needSavePath.ToString().Equals("true", StringComparison.OrdinalIgnoreCase);
+            }
+
+            //获取用户下载的文件夹
+            if (!NeedSaveDownloadFolder)
+            {
+                setDefaultDownloadFolder();
             }
             else
             {
-                try
+                object downloadFolderPath = localSettings.Values["DownloadFolderPath"];
+                if (downloadFolderPath != null)
                 {
-                    DownloadFolder = await StorageFolder.GetFolderFromPathAsync(downloadFolderPath.ToString());
-                }
-                catch
-                {
-                    setDownloadFolderToDefault();
+                    try
+                    {
+                        DownloadFolder = await StorageFolder.GetFolderFromPathAsync(downloadFolderPath.ToString());
+                    }
+                    catch
+                    {
+                        //当用户之前设置的文件夹已经不存在
+                        setDefaultDownloadFolder();
+                    }
                 }
             }
 
+            //获取用户对下载完成提示音的设置
             object isOn = localSettings.Values["IsSoundOn"];
-            if (isOn == null)
-            {
-                IsSoundOn = true;
-            }
-            else
+            if (isOn != null)
             {
                 IsSoundOn = isOn.ToString().Equals("true", StringComparison.OrdinalIgnoreCase);
             }
+
+            //获取用户对是否需要为每个相册建立独立文件夹的设置
+            object needIndividualFolder = localSettings.Values["NeedIndividualFolder"];
+            if (needIndividualFolder != null)
+            {
+                NeedIndividualFolder = needIndividualFolder.ToString().Equals("true", StringComparison.OrdinalIgnoreCase);
+            }
+
+            //获取用户对是否允许自动粘贴的设置
+            object ePaste = localSettings.Values["EnablePaste"];
+            if (ePaste != null)
+            {
+                EnablePaste = ePaste.ToString().Equals("true", StringComparison.OrdinalIgnoreCase);
+            }
         }
-        //设置app的setting
-        private void setAppSettingDownloadFolderPath(StorageFolder folder)
-        {
-            localSettings.Values["DownloadFolderPath"] = folder.Path;
-        }
+        ////设置app的setting
+        //private void setAppSettingDownloadFolderPath(StorageFolder folder)
+        //{
+        //    localSettings.Values["DownloadFolderPath"] = folder.Path;
+        //}
         //设置下载路径到默认的“图片相册”
-        private async void setDownloadFolderToDefault()
+        private async void setDefaultDownloadFolder()
         {
             var pictureLibrary = await StorageLibrary.GetLibraryAsync(KnownLibraryId.Pictures);
+            //downloadFolder= pictureLibrary.SaveFolder;
             DownloadFolder = pictureLibrary.SaveFolder;
         }
 
@@ -428,35 +552,42 @@ namespace UWP_ImagefapDownloader
         private async void TextBox_UrlInput_Paste(object sender, TextControlPasteEventArgs e)
         {
             //AlbumCollection.Add(new Album(e.ToString));
-
-            var dataPackageView = Windows.ApplicationModel.DataTransfer.Clipboard.GetContent();
-            if (dataPackageView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.Text))
+            if (EnablePaste)
             {
-                try
+                var dataPackageView = Windows.ApplicationModel.DataTransfer.Clipboard.GetContent();
+                if (dataPackageView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.Text))
                 {
-                    var text = await dataPackageView.GetTextAsync();
-                    AlbumCollection.Add(new Album(text));
-                    //ElementSoundPlayer.State = ElementSoundPlayerState.On;
-                    //ElementSoundPlayer.Play(ElementSoundKind.Show);
+                    try
+                    {
+                        var text = await dataPackageView.GetTextAsync();
+                        AlbumCollection.Add(new Album(text));
+                    }
+                    catch
+                    {
+                        var player = new MediaPlayer();
+                        player.Source = MediaSource.CreateFromUri(new Uri("ms-appx:///Sounds/Windows_1.wav"));
+                        player.Play();
+                    }
                 }
-                catch
-                {
-                    ElementSoundPlayer.State = ElementSoundPlayerState.On;
-                    ElementSoundPlayer.Play(ElementSoundKind.Hide);
-                    //var player = new MediaPlayer();
-                    //player.Source = MediaSource.CreateFromUri(new Uri("ms-winsoundevent:Notification.Looping.Alarm2"));
-                    //player.Play();
-                }
+
+                TextBox textbox = sender as TextBox;
+                textbox.Text = string.Empty;
             }
 
-            TextBox textbox = sender as TextBox;
-            textbox.Text = string.Empty;
         }
 
-        private void ToggleSwitch_CompleteSound_Toggled(object sender, RoutedEventArgs e)
-        {
-            IsSoundOn = (sender as ToggleSwitch).IsOn;
-            localSettings.Values["IsSoundOn"] = IsSoundOn.ToString();
-        }
+        ////用户选择是否播放下载完成提示音
+        //private void ToggleSwitch_CompleteSound_Toggled(object sender, RoutedEventArgs e)
+        //{
+        //    IsSoundOn = (sender as ToggleSwitch).IsOn;
+        //    localSettings.Values["IsSoundOn"] = IsSoundOn.ToString();
+        //}
+
+        ////用户选择是否为每个相册建立独立的文件夹
+        //private void ToggleSwitch_NeedIndividualFolders_Toggled(object sender, RoutedEventArgs e)
+        //{
+        //    NeedIndividualFolder = (sender as ToggleSwitch).IsOn;
+        //    localSettings.Values["NeedIndividualFolder"] = NeedIndividualFolder.ToString();
+        //}
     }
 }

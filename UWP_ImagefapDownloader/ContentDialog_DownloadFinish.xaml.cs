@@ -24,7 +24,8 @@ namespace UWP_ImagefapDownloader
         public int DownloadImagesCount { get; set; }
         public List<Picture> PictureFailList { get; set; }
         public string DownloadImagesSize { get; set; }
-        public bool IsSoundOn { get; set; }
+        //public bool IsSoundOn { get; set; }
+        public int InvalidAlbumsCount { get; set; }
 
 
         public ContentDialog_DownloadFinish(MainPage mainPage)
@@ -32,22 +33,24 @@ namespace UWP_ImagefapDownloader
             DownloadImagesCount = mainPage.DownloadImagesCount;
             PictureFailList = mainPage.PictureFailCollection.ToList<Picture>();
             DownloadImagesSize = mainPage.DownloadImagesSize.ToString() + " MB";
-            IsSoundOn = mainPage.IsSoundOn;
+            //IsSoundOn = mainPage.IsSoundOn;
+            InvalidAlbumsCount = mainPage.InvalidAlbums.Count;
 
             this.InitializeComponent();
 
             TextBlock_Result.Text = "Download images count: " + DownloadImagesCount + "\n" +
                 "Download images size: " + DownloadImagesSize + "\n" +
-                "Fail to download images count: " + PictureFailList.Count;
+                "Fail to download images count: " + PictureFailList.Count+"\n"+
+                "Invalid album URL count: "+ InvalidAlbumsCount;
             StackPanel_FailList.Visibility = needShowFailList();
 
             //播放声音提示
-            if (IsSoundOn)
-            {
-                var player = new MediaPlayer();
-                player.Source = MediaSource.CreateFromUri(new Uri("ms-winsoundevent:Notification.Looping.Alarm3"));
-                player.Play();
-            }
+            //if (IsSoundOn)
+            //{
+            //    var player = new MediaPlayer();
+            //    player.Source = MediaSource.CreateFromUri(new Uri("ms-winsoundevent:Notification.Looping.Alarm3"));
+            //    player.Play();
+            //}
         }
 
         public Visibility needShowFailList()
