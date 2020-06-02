@@ -99,9 +99,73 @@ namespace UWP_ImagefapDownloader
             }
         }
         //当前的状态，是否是暂停。
-        private bool isPause = false;
+        //private bool isPause = false;
         //当前toggle button上面显示的文字
-        private bool toggleButtonTextIsPause = false;
+        //private bool toggleButtonTextIsPause = false;
+
+        private string startButtonText = "Donwload";
+        public string StartButtonText
+        {
+            get { return startButtonText; }
+            set
+            {
+                startButtonText = value;
+                OnPropertyChanged("StartButtonText");
+            }
+        }
+        private Symbol startButtonSymbol = Symbol.Download;
+        public Symbol StartButtonSymbol
+        {
+            get { return startButtonSymbol; }
+            set
+            {
+                startButtonSymbol = value;
+                OnPropertyChanged("StartButtonSymbol");
+            }
+        }
+        private bool isPausing = false;
+        public bool IsPausing
+        {
+            get { return isPausing; }
+            set
+            {
+                isPausing = value;
+                setButtonTextAndSymbol();
+            }
+        }
+        private bool isDownloadStart = false;
+        public bool IsDownloadStart
+        {
+            get { return isDownloadStart; }
+            set
+            {
+                isDownloadStart = value;
+                setButtonTextAndSymbol();
+            }
+        }
+
+        private void setButtonTextAndSymbol()
+        {
+            if (!isDownloadStart)
+            {
+                StartButtonText = "Donwload";
+                StartButtonSymbol = Symbol.Download;
+            }
+            else
+            {
+                if (!isPausing)
+                {
+                    StartButtonText = "Pause";
+                    StartButtonSymbol = Symbol.Clock;
+                }
+                else
+                {
+                    StartButtonText = "Resume";
+                    StartButtonSymbol = Symbol.Download;
+                }
+            }
+        }
+
         //应用程序的setting
         private static Windows.Storage.ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
         //是否播放下载完成的提示音
@@ -148,7 +212,6 @@ namespace UWP_ImagefapDownloader
 
         //是否允许把粘贴内容自动添加到下载列表
         private bool enablePaste = false;
-
         public bool EnablePaste
         {
             get { return enablePaste; }
@@ -157,6 +220,18 @@ namespace UWP_ImagefapDownloader
                 enablePaste = value;
                 OnPropertyChanged("EnablePaste");
                 localSettings.Values["EnablePaste"] = value.ToString();
+            }
+        }
+        //是否播放教程
+        private bool isFirstRun = true;
+        public bool IsFirstRun
+        {
+            get { return isFirstRun; }
+            set
+            {
+                isFirstRun = false;
+                OnPropertyChanged("IsFirstRun");
+                localSettings.Values["IsFirstRun"] = value.ToString();
             }
         }
 
@@ -172,15 +247,26 @@ namespace UWP_ImagefapDownloader
             myInitialize();
         }
 
-        public void myInitialize()
+        public async void myInitialize()
         {
-            getAppSetting();
+            await getAppSetting();
+            //string s=await htmlDownloadAsync("https://www.imagefap.com/gallery.php?gid=8758423");
+            if (IsFirstRun)
+            {
+                showTutorial();
+                IsFirstRun = false;
+            }
         }
 
 
         //用户添加一条URL
         private void Button_Add_Click(object sender, RoutedEventArgs e)
         {
+            if (string.IsNullOrEmpty(UrlInput))
+            {
+                TeachingTip_NullUrlInput.IsOpen = true;
+                return;
+            }
             AlbumCollection.Add(new Album(UrlInput));
             UrlInput = string.Empty;
         }
@@ -216,26 +302,32 @@ namespace UWP_ImagefapDownloader
         }
 
         //用户点击“下载”和“暂停”
-        private void ToggleButton_RunOrPause_Click(object sender, RoutedEventArgs e)
+        private void Button_RunOrPause_Click(object sender, RoutedEventArgs e)
         {
-            ToggleButton toggleButton = sender as ToggleButton;
-            if (toggleButton.IsChecked == true)
+            //还没有开始下载
+            if (!IsDownloadStart)
             {
-                if (!isPause)
+                //如果下载列表为空，弹出提示对话
+                if (AlbumCollection.Count == 0)
                 {
-                    startDonwload();
+                    TeachingTip_NullUrlInput.IsOpen = true;
+                    return;
                 }
+                //开始下载
                 else
                 {
-                    isPause = false;
+                    IsDownloadStart = true;
+                    startDonwload();
                 }
+
             }
+            //如果已经开始下载,暂停/恢复
             else
             {
-                //TODO: 暂停
-                isPause = true;
+                IsPausing = !IsPausing;
             }
         }
+
 
 
         //开始主流程，解析和下载流程
@@ -244,16 +336,17 @@ namespace UWP_ImagefapDownloader
             for (int i = 0; i < AlbumCollection.Count; i++)
             {
                 //ListView_1.SelectedItem = AlbumCollection[i];
-                Album album = await getImagePagesUrlsFromAlbum(AlbumCollection[i]);
-                if (album == null)
+                AlbumCollection[i] = await getImagePagesUrlsFromAlbum(AlbumCollection[i]);
+                AlbumCollection[i].AlbumMessage = "Downloading...";
+                if (AlbumCollection[i].IsUrlValid == false)
                 {
-                    AlbumCollection[i].IsUrlValid = false;
+                    AlbumCollection[i].AlbumMessage = "Invalid URL";
                     InvalidAlbums.Add(AlbumCollection[i]);
                     continue;
                 }
-                AlbumCollection[i] = album;
+                //AlbumCollection[i] = album;
                 await donwloadAlbumObject(AlbumCollection[i]);
-
+                AlbumCollection[i].AlbumMessage = "Complete";
             }
 
             //下载完成播放提示音
@@ -273,42 +366,41 @@ namespace UWP_ImagefapDownloader
         //TODO:判断URL无效
         private async Task<Album> getImagePagesUrlsFromAlbum(Album album)
         {
+
             //去掉url头尾的空格
             string url = album.AlbumUrlUserInput.Trim();
-            //如果是相册的某一页url，修复成相册本身的url
-            if (url.Contains("?gid"))
+            //通过域名过滤无效链接
+            Match matchDomain = Regex.Match(url, @"https://www.imagefap.com/");
+            if (string.IsNullOrEmpty(matchDomain.Value))
             {
-                int index = url.LastIndexOf("?gid");
+                album.IsUrlValid = false;
+                return album;
+            }
+            //把当前链接替换成“一页显示所有图片”的链接
+            if (url.Contains("&view="))
+            {
+                int index = url.LastIndexOf("&view=");
                 url = url.Remove(index);
             }
+            url += "&view=2";
 
-            album.AlbumUrlStandard = url;
-
-            //找到url中的相册id
-            string pattern = @"/pictures/(\d{7,})/";
-            //构建一次能显示所有照片的页面url
-            Match match = Regex.Match(url, pattern);
-
-            string id = match.Value;
-
-            if (string.IsNullOrEmpty(id))
+            try
             {
-                return null;
+                string htmlAlbumPage = await htmlDownloadAsync(url);
+                album.ImagePageUrlList = searchPageUrlInAlbumPage(htmlAlbumPage);
+                album.AlbumName = searchAlbumNameInAlbumPage(htmlAlbumPage);
+                return album;
+            }
+            catch
+            {
+                album.IsUrlValid = false;
+                return album;
             }
 
-            id = id.Remove(0, 10);
-            id = id.Remove(id.Length - 1);
-            url = url + "?gid=" + id + "&view=2";
-
-
-            string htmlAlbumPage = await htmlDownloadAsync(url);
-            album.ImagePageUrlList = searchPageUrlInAlbum(htmlAlbumPage);
-            //await new MessageDialog(album.ImagePageUrlList[1], "对话框标题").ShowAsync();
-            return album;
         }
 
         //在Album Page中找到每张图片的Image Page地址
-        private List<String> searchPageUrlInAlbum(string html)
+        private List<String> searchPageUrlInAlbumPage(string html)
         {
             string pattern = @"/photo/[^\f\n\r\t\v>\u0022]*";
             MatchCollection urls = Regex.Matches(html, pattern);
@@ -322,6 +414,20 @@ namespace UWP_ImagefapDownloader
             }
             return urlList;
         }
+        //在Album Page中找到相册的名称
+        private string searchAlbumNameInAlbumPage(string html)
+        {
+            string pattern1 = "<title>[^']+</title>";
+            Match match1 = Regex.Match(html, pattern1);
+            string pattern2 = "[^><]+&";
+            Match match2 = Regex.Match(match1.Value, pattern2);
+            int index = match2.Value.LastIndexOf(" Porn Pics");
+            string name = match2.Value.Remove(index);
+            //去掉首位空格，否则在创建文件夹的时候，windows不允许文件夹的末尾出现空格
+            name=name.Trim();
+            return name;
+        }
+
 
         //下载一个解析好的Album对象，把每张图片存入本地
         private async Task donwloadAlbumObject(Album album)
@@ -330,7 +436,7 @@ namespace UWP_ImagefapDownloader
             StorageFolder saveFolder = DownloadFolder;
             if (NeedIndividualFolder)
             {
-               saveFolder=await DownloadFolder.CreateFolderAsync(album.AlbumName+"_ImageFapDownloader",CreationCollisionOption.GenerateUniqueName);
+                saveFolder = await DownloadFolder.CreateFolderAsync(album.AlbumName, CreationCollisionOption.GenerateUniqueName);
             }
 
 
@@ -341,7 +447,7 @@ namespace UWP_ImagefapDownloader
                 Picture picture = await findPictureInImagePage(album.AlbumName, picNum, imagePageUrl);
                 album.PictureList.Add(picture);
                 //让程序暂停，但已经开始的Task还是会完成下载。
-                while (isPause)
+                while (IsPausing)
                 {
                     await Task.Delay(1000);
                 }
@@ -360,8 +466,13 @@ namespace UWP_ImagefapDownloader
             string pattern = @"https://cdn.imagefap.com/images/full[^\f\n\r\t\v>\u0022]*";
             Match match = Regex.Match(html, pattern);
             string imageUrl = match.ToString();
+
+            //查找图片的文件类型（gif,jpg,jpeg,png）
+            string patternFileExtention = "[.](gif|jpg|jpeg|png|bmp)";
+            string fileExtention = Regex.Match(imageUrl, patternFileExtention).ToString();
+
             Picture picture = new Picture();
-            picture.PictureFileName = albumName + "_" + picNum + ".jpg";
+            picture.PictureFileName = albumName + "_" + picNum + fileExtention;
             picture.PictureUrl = imageUrl;
             picture.PicturePageUrl = pageUrl;
             return picture;
@@ -436,48 +547,17 @@ namespace UWP_ImagefapDownloader
             AlbumCollection.Clear();
             InvalidAlbums.Clear();
             PictureFailCollection.Clear();
-            ToggleButton_RunOrPause.IsChecked = false;
-            toggleButtonTextIsPause = false;
+            //ToggleButton_RunOrPause.IsChecked = false;
+            IsDownloadStart = false;
+            IsPausing = false;
             downloadImagesSize = 0;
             DownloadImagesSize = 0;
             DownloadImagesCount = 0;
             this.Bindings.Update();
         }
-        //ToggleButton绑定的Text
-        public string getToggleButtonText(bool? isChecked)
-        {
-            if (isChecked == true)
-            {
-                toggleButtonTextIsPause = true;
-                return "Pause";
-            }
-            else
-            {
-                if (toggleButtonTextIsPause)
-                {
-                    return "Resume Download";
-                }
-                else
-                {
-                    return "Start Download";
-                }
-            }
-        }
-        //ToggleButton绑定的Symble图标
-        public Symbol getToggleButtonIcon(bool? isCheked)
-        {
-            if (isCheked == true)
-            {
-                return Symbol.Clock;
-            }
-            else
-            {
-                return Symbol.Download;
-            }
-        }
 
         //获得app的setting
-        private async void getAppSetting()
+        private async Task getAppSetting()
         {
             //获取用户对是否保存下载路径的设置
             object needSavePath = localSettings.Values["NeedSaveDownloadFolder"];
@@ -486,7 +566,7 @@ namespace UWP_ImagefapDownloader
                 NeedSaveDownloadFolder = needSavePath.ToString().Equals("true", StringComparison.OrdinalIgnoreCase);
             }
 
-            //获取用户下载的文件夹
+            //获取用户下载的文件夹路径
             if (!NeedSaveDownloadFolder)
             {
                 setDefaultDownloadFolder();
@@ -528,12 +608,15 @@ namespace UWP_ImagefapDownloader
             {
                 EnablePaste = ePaste.ToString().Equals("true", StringComparison.OrdinalIgnoreCase);
             }
+
+            //获取用户是否是第一次运行该程序
+            object isFirstTime = localSettings.Values["IsFirstRun"];
+            if (isFirstTime != null)
+            {
+                IsFirstRun = isFirstTime.ToString().Equals("true", StringComparison.OrdinalIgnoreCase);
+            }
         }
-        ////设置app的setting
-        //private void setAppSettingDownloadFolderPath(StorageFolder folder)
-        //{
-        //    localSettings.Values["DownloadFolderPath"] = folder.Path;
-        //}
+
         //设置下载路径到默认的“图片相册”
         private async void setDefaultDownloadFolder()
         {
@@ -575,6 +658,59 @@ namespace UWP_ImagefapDownloader
             }
 
         }
+        private void AppBarButton_Tutorial_Click(object sender, RoutedEventArgs e)
+        {
+            showTutorial();
+        }
+
+        private void showTutorial()
+        {
+            TeachingTip_EnterUrl.IsOpen = true;
+            TeachingTip_EnterUrl.Closed += TeachingTip_EnterUrl_Closed;           
+        }
+
+        private void TeachingTip_EnterUrl_Closed(Microsoft.UI.Xaml.Controls.TeachingTip sender, Microsoft.UI.Xaml.Controls.TeachingTipClosedEventArgs args)
+        {
+            //throw new NotImplementedException();
+            TeachingTip_AddButton.IsOpen = true;
+            TeachingTip_AddButton.Closed += TeachingTip_AddButton_Closed;
+        }
+
+        private void TeachingTip_AddButton_Closed(Microsoft.UI.Xaml.Controls.TeachingTip sender, Microsoft.UI.Xaml.Controls.TeachingTipClosedEventArgs args)
+        {
+            //throw new NotImplementedException();
+            TeachingTip_DownloadTaskList.IsOpen = true;
+            TeachingTip_DownloadTaskList.Closed += TeachingTip_DownloadTaskList_Closed;
+        }
+
+        private void TeachingTip_DownloadTaskList_Closed(Microsoft.UI.Xaml.Controls.TeachingTip sender, Microsoft.UI.Xaml.Controls.TeachingTipClosedEventArgs args)
+        {
+            //throw new NotImplementedException();
+            TeachingTip_SelectFolderButton.IsOpen = true;
+            TeachingTip_SelectFolderButton.Closed += TeachingTip_SelectFolderButton_Closed;
+        }
+
+        private void TeachingTip_SelectFolderButton_Closed(Microsoft.UI.Xaml.Controls.TeachingTip sender, Microsoft.UI.Xaml.Controls.TeachingTipClosedEventArgs args)
+        {
+            //throw new NotImplementedException();
+            TeachingTip_StartDownloadButton.IsOpen = true;
+            TeachingTip_StartDownloadButton.Closed += TeachingTip_StartDownloadButton_Closed;
+        }
+
+        private void TeachingTip_StartDownloadButton_Closed(Microsoft.UI.Xaml.Controls.TeachingTip sender, Microsoft.UI.Xaml.Controls.TeachingTipClosedEventArgs args)
+        {
+            //throw new NotImplementedException();
+            TeachingTip_Setting.IsOpen = true;
+            TeachingTip_Setting.Closed += TeachingTip_Setting_Closed;
+        }
+
+        private void TeachingTip_Setting_Closed(Microsoft.UI.Xaml.Controls.TeachingTip sender, Microsoft.UI.Xaml.Controls.TeachingTipClosedEventArgs args)
+        {
+            //throw new NotImplementedException();
+            TeachingTip_Tutorial.IsOpen = true;
+        }
+
+
 
         ////用户选择是否播放下载完成提示音
         //private void ToggleSwitch_CompleteSound_Toggled(object sender, RoutedEventArgs e)

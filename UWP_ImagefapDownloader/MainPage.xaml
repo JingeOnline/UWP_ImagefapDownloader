@@ -7,6 +7,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     xmlns:sys="using:System"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     >
 
@@ -16,7 +17,7 @@
         </Style>
         <Style TargetType="TextBlock" x:Key="Style_TextBlock_2">
             <Setter Property="FontSize" Value="16"/>
-            <Setter Property="Foreground" Value="{ThemeResource SystemControlPageTextBaseMediumBrush}"/>
+            <Setter Property="Foreground" Value="{ThemeResource SystemAccentColorLight2}"/>
         </Style>
         <Style TargetType="TextBlock" x:Key="Style_TextBlock_3">
             <Setter Property="FontSize" Value="16"/>
@@ -28,15 +29,13 @@
             <Setter Property="Foreground" Value="{ThemeResource SystemAccentColorLight3}"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
-        <Style TargetType="Button" x:Key="Style_Button_1">
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="Width" Value="72"/>
-        </Style>
     </Page.Resources>
 
     <Page.TopAppBar>
         <CommandBar IsOpen="False" ClosedDisplayMode="Compact" IsSticky="True" 
                     Background="{ThemeResource SystemAccentColorDark1}" Foreground="{ThemeResource SystemAltHighColor}">
+            <AppBarButton Icon="AllApps" Label="Tutorial" x:Name="AppBarButton_Tutorial"
+                          Click="AppBarButton_Tutorial_Click" Foreground="{ThemeResource SystemAltHighColor}"/>
             <AppBarButton Icon="Setting" Label="Setting" x:Name="AppBarButton_Setting"
                           Click="AppBarButton_Setting_Click" Foreground="{ThemeResource SystemAltHighColor}"/>
         </CommandBar>
@@ -67,9 +66,9 @@
                 </Grid.ColumnDefinitions>
                 <TextBox Grid.Column="0" FontSize="16" Text="{x:Bind UrlInput, Mode=TwoWay}"
                      PlaceholderText="Please enter the url..." x:Name="TextBox_UrlInput"
-                         Paste="TextBox_UrlInput_Paste"/>
+                         Paste="TextBox_UrlInput_Paste" BorderBrush="{StaticResource SystemAccentColor}"/>
                 <Button Grid.Column="1" x:Name="Button_Add"
-                        Style="{StaticResource Style_Button_1}" Margin="8,0,0,0" 
+                        Style="{StaticResource AccentButtonStyle}" CornerRadius="4" Width="96" Margin="8,0,0,0"
                         ToolTipService.ToolTip="Add url to the download list."
                     Click="Button_Add_Click">
                     <Button.Content>
@@ -82,14 +81,15 @@
             </Grid>
             <!--下载列表-->
             <ListView SelectionMode="Single" Grid.Row="2" Margin="0,0,0,8" 
-                  ItemsSource="{x:Bind AlbumCollection}" x:Name="ListView_1">
+                  ItemsSource="{x:Bind AlbumCollection}" x:Name="ListView_DownloadTasks" 
+                      BorderThickness="1" BorderBrush="{StaticResource SystemAccentColor}">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="local:Album" >
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="auto"/>
-                                <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="auto"/>
+                                <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="auto"/>
                             </Grid.ColumnDefinitions>
                             <Button Background="Transparent" VerticalAlignment="Center"
@@ -97,9 +97,12 @@
                                 Click="Button_Delete_Click" >
                                 <SymbolIcon Symbol="{x:Bind DownloadStateIcon,Mode=OneWay}"/>
                             </Button>
+                            <TextBlock Style="{StaticResource Style_TextBlock_1}"
+                                       Text="{x:Bind AlbumMessage,Mode=OneWay}" Grid.Column="1"
+                                       VerticalAlignment="Center" Margin="12,0" FontWeight="Bold"/>
                             <TextBlock Style="{StaticResource Style_TextBlock_1}" 
                                Text="{x:Bind AlbumUrlUserInput}" VerticalAlignment="Center"
-                                   Margin="12,0" Grid.Column="1" Width="auto" />
+                                   Margin="12,0" Grid.Column="2" Width="auto" />
                             <!--<SymbolIcon Symbol="{x:Bind DownloadStateIcon,Mode=OneWay}" 
                                     Grid.Column="2"/>-->
                             <!--<TextBlock Style="{StaticResource Style_TextBlock_1}"
@@ -116,7 +119,7 @@
                     <ColumnDefinition Width="auto"/>
                     <!--<ColumnDefinition Width="auto"/>-->
                 </Grid.ColumnDefinitions>
-                <Button Style="{StaticResource Style_Button_1}" 
+                <Button Style="{StaticResource AccentButtonStyle}" CornerRadius="4" Width="96"
                     ToolTipService.ToolTip="Select download folder" x:Name="Button_SelectFolder"
                     Click="Button_SelectFolder_Click">
                     <Button.Content>
@@ -127,20 +130,21 @@
                     </Button.Content>
                 </Button>
                 <TextBlock FontSize="16" Grid.Column="1" Text="{x:Bind DownloadFolder.Path,Mode=OneWay}"
-                       VerticalAlignment="Center"/>
-                <ToggleButton Grid.Column="2" x:Name="ToggleButton_RunOrPause" 
-                          Click="ToggleButton_RunOrPause_Click" Width="256">
-                    <ToggleButton.Content>
+                       VerticalAlignment="Center" Margin="8,0"/>
+                <Button Grid.Column="2" x:Name="Button_RunOrPause" 
+                          Click="Button_RunOrPause_Click" Width="160" CornerRadius="4"
+                            Style="{StaticResource AccentButtonStyle}">
+                    <Button.Content>
                         <StackPanel Orientation="Horizontal">
-                            <SymbolIcon Symbol="{x:Bind getToggleButtonIcon(ToggleButton_RunOrPause.IsChecked),Mode=OneWay}" Margin="0,0,4,0"/>
-                            <TextBlock Text="{x:Bind getToggleButtonText(ToggleButton_RunOrPause.IsChecked),Mode=OneWay}" x:Name="TextBlock_DownloadOrPause"/>
+                            <SymbolIcon Symbol="{x:Bind StartButtonSymbol,Mode=OneWay}" Margin="0,0,4,0"/>
+                            <TextBlock Text="{x:Bind StartButtonText,Mode=OneWay}" />
                         </StackPanel>
-                    </ToggleButton.Content>
-                </ToggleButton>
+                    </Button.Content>
+                </Button>
             </Grid>
         </Grid>
         <!--底部状态栏，左右没有边距-->
-        <Grid Grid.Row="1" Background="LightGray" Height="24">
+        <Grid Grid.Row="1" Background="{ThemeResource SystemAccentColorDark1}" Height="24">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
@@ -187,7 +191,7 @@
                                       x:Name="ToggleSwitch_CompleteSound" Margin="0,0,0,8"/>
                         <!--是否需要下载到独立文件夹-->
                         <TextBlock Text="Download Albums In Individual Folders" Style="{StaticResource Style_TextBlock_3}"/>
-                        <TextBlock Text="Create a folder before download the album to save the pictures separately." 
+                        <TextBlock Text="Create a sub folder before download the album to save the pictures separately." 
                                    Style="{StaticResource Style_TextBlock_4}"/>
                         <ToggleSwitch Foreground="{ThemeResource SystemAltHighColor}" IsOn="{x:Bind NeedIndividualFolder,Mode=TwoWay}" 
                                       x:Name="ToggleSwitch_NeedIndividualFolders" Margin="0,0,0,8"/>
@@ -195,7 +199,7 @@
                         <TextBlock Text="* Paste Text Automatically Insert" Style="{StaticResource Style_TextBlock_3}"/>
                         <TextBlock Text="When paste text in the url textbox, automatically insert this url to the download tasks list." 
                                    Style="{StaticResource Style_TextBlock_4}" Margin="0,0,0,8"/>
-                        <TextBlock Text="WARNING: This function is not reliable, sometimes the automatic insert can be failed. So pay attention when turn it on. If insert fails, it will notice you by a special sound." 
+                        <TextBlock Text="WARNING: This function is not reliable, sometimes the automatic insert can be failed. So pay attention when turn it on. If insert fails, it will notice you by a sound alert." 
                                    Style="{StaticResource Style_TextBlock_4}" Foreground="Yellow"/>
                         <ToggleSwitch Foreground="{ThemeResource SystemAltHighColor}" IsOn="{x:Bind EnablePaste,Mode=TwoWay}" 
                                       Margin="0,0,0,8"/>
@@ -203,6 +207,47 @@
                 </ScrollViewer>
             </SplitView.Pane>
         </SplitView>
+        <!--下载列表为空，但是用户点击开始下载按钮，或者用户没有输入URL，就点击了ADD-->
+        <muxc:TeachingTip x:Name="TeachingTip_NullUrlInput" Target="{x:Bind TextBox_UrlInput}"
+                          Title="Add url to the download list"
+                          Subtitle="Please paste the url into the textbox and then click Add button."
+                          PreferredPlacement="Bottom">
+        </muxc:TeachingTip>
+        <muxc:TeachingTip x:Name="TeachingTip_EnterUrl" Target="{x:Bind TextBox_UrlInput}"
+                          Title="Paste URL in here"
+                          Subtitle="Copy the album link you want to download from www.ImageFap.com, then past into the textbox."
+                          PreferredPlacement="Bottom">
+        </muxc:TeachingTip>
+        <muxc:TeachingTip x:Name="TeachingTip_AddButton" Target="{x:Bind Button_Add}"
+                          Title="Then click this button"
+                          Subtitle="Click this button to insert URL into download task list."
+                          PreferredPlacement="Left">
+        </muxc:TeachingTip>
+        <muxc:TeachingTip x:Name="TeachingTip_DownloadTaskList" Target="{x:Bind ListView_DownloadTasks}"
+                          Title="Download Task List"
+                          Subtitle="Your download task list will show in here."
+                          PreferredPlacement="Top">
+        </muxc:TeachingTip>
+        <muxc:TeachingTip x:Name="TeachingTip_SelectFolderButton" Target="{x:Bind Button_SelectFolder}"
+                          Title="Select the save folder"
+                          Subtitle="Click to select the target folder you want to download to."
+                          PreferredPlacement="Right">
+        </muxc:TeachingTip>
+        <muxc:TeachingTip x:Name="TeachingTip_StartDownloadButton" Target="{x:Bind Button_RunOrPause}"
+                          Title="Click to start download"
+                          Subtitle="Click this button to start download all tasks in your list, after download start you can pause at any time."
+                          PreferredPlacement="Left"> 
+        </muxc:TeachingTip>
+        <muxc:TeachingTip x:Name="TeachingTip_Setting" Target="{x:Bind AppBarButton_Setting}"
+                          Title="App Setting"
+                          Subtitle="You can personalize download setting in here."
+                          PreferredPlacement="Bottom">
+        </muxc:TeachingTip>
+        <muxc:TeachingTip x:Name="TeachingTip_Tutorial" Target="{x:Bind AppBarButton_Tutorial}"
+                          Title="Replay tutorial"
+                          Subtitle="You can replay the tutorial at any time."
+                          PreferredPlacement="Bottom">
+        </muxc:TeachingTip>
     </Grid>
 
 </Page>

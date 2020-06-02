@@ -11,10 +11,10 @@ namespace UWP_ImagefapDownloader
 {
     public class Album:INotifyPropertyChanged
     {   
-        //相册的URL，url不带任何?gid,view=等字符
+        //用户输入的相册的URL
         private String albumUrlUserInput;
-        //相册的标准URL(取名称用)
-        private string albumUrlStandard;
+        ////相册的标准URL(取名称用)
+        //private string albumUrlStandard;
         //Imagefap图片页面的URl
         private List<string> imagePageUrlList = new List<string>();
         //图片的列表
@@ -27,6 +27,8 @@ namespace UWP_ImagefapDownloader
         private Symbol downloadStateIcon=Symbol.Delete;
         //该相册的URL是否有效，能否被下载
         private bool isUrlValid = true;
+        //下载时候的提示信息
+        private string albumMessage = "Waiting...";
 
 
         public String AlbumUrlUserInput
@@ -41,20 +43,20 @@ namespace UWP_ImagefapDownloader
             }
         }
 
-        public string AlbumUrlStandard
-        {
-            get
-            {
-                return albumUrlStandard;
-            }
-            set
-            {
-                albumUrlStandard = value;
-                //为相册名称赋值
-                string[] array = Regex.Split(value, "/", RegexOptions.IgnoreCase);
-                this.AlbumName = array[array.Length - 1];
-            }
-        }
+        //public string AlbumUrlStandard
+        //{
+        //    get
+        //    {
+        //        return albumUrlStandard;
+        //    }
+        //    set
+        //    {
+        //        albumUrlStandard = value;
+        //        //为相册名称赋值
+        //        string[] array = Regex.Split(value, "/", RegexOptions.IgnoreCase);
+        //        this.AlbumName = array[array.Length - 1];
+        //    }
+        //}
 
         public List<string> ImagePageUrlList
         {
@@ -122,6 +124,15 @@ namespace UWP_ImagefapDownloader
                 isUrlValid = value;
                 DownloadStateIcon = Symbol.Important;
                 OnPropertyChanged("IsUrlValid");
+            }
+        }
+        public string AlbumMessage
+        {
+            get { return albumMessage; }
+            set
+            {
+                albumMessage = value;
+                OnPropertyChanged("AlbumMessage");
             }
         }
 
