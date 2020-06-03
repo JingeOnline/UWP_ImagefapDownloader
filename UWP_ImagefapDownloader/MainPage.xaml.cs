@@ -283,8 +283,7 @@ namespace UWP_ImagefapDownloader
             {
                 // Application now has read/write access to all contents in the picked folder
                 // (including other sub-folder contents)
-                Windows.Storage.AccessCache.StorageApplicationPermissions.
-                FutureAccessList.AddOrReplace("PickedFolderToken", folder);
+                Windows.Storage.AccessCache.StorageApplicationPermissions.FutureAccessList.AddOrReplace("PickedFolderToken", folder);
                 DownloadFolder = folder;
             }
             else
@@ -482,12 +481,10 @@ namespace UWP_ImagefapDownloader
                 try
                 {
                     string result = await httpClient.GetStringAsync(uri);
-                    //await new MessageDialog(result).ShowAsync();
                     return result;
                 }
                 catch (Exception ex)
                 {
-                    // Details in ex.Message and ex.HResult.
                     return string.Empty;
                 }
             }
@@ -520,10 +517,6 @@ namespace UWP_ImagefapDownloader
 
         }
 
-        //private void HandleDownloadAsync(DownloadOperation download, bool v)
-        //{
-        //    //throw new NotImplementedException();
-        //}
 
         private async void writeStringToFile(string fileName, string content)
         {

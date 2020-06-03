@@ -7,15 +7,15 @@
   IgnorableNamespaces="uap mp">
 
   <Identity
-    Name="7a8e9be7-850e-4661-8f55-94db1dac8bf0"
-    Publisher="CN=jinge"
+    Name="11763Jinge.ImageFapDownloader"
+    Publisher="CN=780241D0-D5E7-4008-8A66-AA0A861A5C1A"
     Version="1.0.0.0" />
 
-  <mp:PhoneIdentity PhoneProductId="7a8e9be7-850e-4661-8f55-94db1dac8bf0" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+  <mp:PhoneIdentity PhoneProductId="48e5a8dd-c606-4c9f-be91-e1abb4b42168" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>UWP_ImagefapDownloader</DisplayName>
-    <PublisherDisplayName>jinge</PublisherDisplayName>
+    <DisplayName>ImageFap Downloader</DisplayName>
+    <PublisherDisplayName>Jinge Studio</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
