@@ -80,10 +80,7 @@ namespace UWP_ImagefapDownloader
         }
         //下载失败的文件List
         public ObservableCollection<Picture> PictureFailCollection = new ObservableCollection<Picture>();
-        //下载路径（默认值为windows相册）
-        //private string downloadFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-        //private StorageFolder downloadFolder = KnownFolders.PicturesLibrary;
-        //private 
+
         private StorageFolder downloadFolder;
         public StorageFolder DownloadFolder
         {
@@ -98,10 +95,6 @@ namespace UWP_ImagefapDownloader
                 localSettings.Values["DownloadFolderPath"] = value.Path;
             }
         }
-        //当前的状态，是否是暂停。
-        //private bool isPause = false;
-        //当前toggle button上面显示的文字
-        //private bool toggleButtonTextIsPause = false;
 
         private string startButtonText = "Donwload";
         public string StartButtonText
@@ -257,7 +250,6 @@ namespace UWP_ImagefapDownloader
                 IsFirstRun = false;
             }
         }
-
 
         //用户添加一条URL
         private void Button_Add_Click(object sender, RoutedEventArgs e)
@@ -709,21 +701,5 @@ namespace UWP_ImagefapDownloader
             //throw new NotImplementedException();
             TeachingTip_Tutorial.IsOpen = true;
         }
-
-
-
-        ////用户选择是否播放下载完成提示音
-        //private void ToggleSwitch_CompleteSound_Toggled(object sender, RoutedEventArgs e)
-        //{
-        //    IsSoundOn = (sender as ToggleSwitch).IsOn;
-        //    localSettings.Values["IsSoundOn"] = IsSoundOn.ToString();
-        //}
-
-        ////用户选择是否为每个相册建立独立的文件夹
-        //private void ToggleSwitch_NeedIndividualFolders_Toggled(object sender, RoutedEventArgs e)
-        //{
-        //    NeedIndividualFolder = (sender as ToggleSwitch).IsOn;
-        //    localSettings.Values["NeedIndividualFolder"] = NeedIndividualFolder.ToString();
-        //}
     }
 }

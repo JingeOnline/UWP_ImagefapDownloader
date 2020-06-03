@@ -34,7 +34,7 @@
     <Page.TopAppBar>
         <CommandBar IsOpen="False" ClosedDisplayMode="Compact" IsSticky="True" 
                     Background="{ThemeResource SystemAccentColorDark1}" Foreground="{ThemeResource SystemAltHighColor}">
-            <AppBarButton Icon="AllApps" Label="Tutorial" x:Name="AppBarButton_Tutorial"
+            <AppBarButton Icon="OtherUser" Label="Tutorial" x:Name="AppBarButton_Tutorial"
                           Click="AppBarButton_Tutorial_Click" Foreground="{ThemeResource SystemAltHighColor}"/>
             <AppBarButton Icon="Setting" Label="Setting" x:Name="AppBarButton_Setting"
                           Click="AppBarButton_Setting_Click" Foreground="{ThemeResource SystemAltHighColor}"/>
@@ -56,8 +56,8 @@
                 <RowDefinition Height="auto"/>
             </Grid.RowDefinitions>
             <!--app标题logo-->
-            <TextBlock Text="ImageFap Downloader"  Margin="0,0,0,12" Foreground="{ThemeResource SystemAccentColor}"
-                   HorizontalAlignment="Center" FontSize="72" FontWeight="Bold"/>
+            <TextBlock Text="ImageFap Downloader"  Margin="0,0,0,16" Foreground="{ThemeResource SystemAccentColor}"
+                   HorizontalAlignment="Center" FontSize="64" FontWeight="Bold"/>
             <!--用户添加URL的一行控件-->
             <Grid Margin="0,0,0,8" Grid.Row="1">
                 <Grid.ColumnDefinitions>
