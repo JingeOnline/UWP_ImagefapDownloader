@@ -414,8 +414,20 @@ namespace UWP_ImagefapDownloader
             Match match2 = Regex.Match(match1.Value, pattern2);
             int index = match2.Value.LastIndexOf(" Porn Pics");
             string name = match2.Value.Remove(index);
+            //排除windows不允许创建文件夹名称时使用的字符
+            name = name.Replace("/", "_");
+            name = name.Replace("\\", "_");
+            name = name.Replace("<", "_");
+            name = name.Replace(">", "_");
+            name = name.Replace(":", "_");
+            name = name.Replace("*", "_");
+            name = name.Replace("?", "_");
+            name = name.Replace("|", "_");
+            name = name.Replace("\"", "_");
+            name = name.Replace(".", "_");
+
             //去掉首位空格，否则在创建文件夹的时候，windows不允许文件夹的末尾出现空格
-            name=name.Trim();
+            name = name.Trim();
             return name;
         }
 
@@ -651,7 +663,7 @@ namespace UWP_ImagefapDownloader
         private void showTutorial()
         {
             TeachingTip_EnterUrl.IsOpen = true;
-            TeachingTip_EnterUrl.Closed += TeachingTip_EnterUrl_Closed;           
+            TeachingTip_EnterUrl.Closed += TeachingTip_EnterUrl_Closed;
         }
 
         private void TeachingTip_EnterUrl_Closed(Microsoft.UI.Xaml.Controls.TeachingTip sender, Microsoft.UI.Xaml.Controls.TeachingTipClosedEventArgs args)
