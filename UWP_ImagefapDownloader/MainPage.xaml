@@ -117,20 +117,22 @@
                     <ColumnDefinition Width="auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="auto"/>
-                    <!--<ColumnDefinition Width="auto"/>-->
                 </Grid.ColumnDefinitions>
-                <Button Style="{StaticResource AccentButtonStyle}" CornerRadius="4" Width="96"
-                    ToolTipService.ToolTip="Select download folder" x:Name="Button_SelectFolder"
+                <!--选择文件夹按钮-->
+                <Button Style="{StaticResource AccentButtonStyle}" CornerRadius="4" Width="160"
+                    ToolTipService.ToolTip="Select the folder images download to" x:Name="Button_SelectFolder"
                     Click="Button_SelectFolder_Click">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">
                             <SymbolIcon Symbol="Folder" Margin="0,0,4,0"/>
-                            <TextBlock Text="To"/>
+                            <TextBlock Text="Download To"/>
                         </StackPanel>
                     </Button.Content>
                 </Button>
+                <!--文件夹路径TextBlock-->
                 <TextBlock FontSize="16" Grid.Column="1" Text="{x:Bind DownloadFolder.Path,Mode=OneWay}"
                        VerticalAlignment="Center" Margin="8,0"/>
+                <!--开始下载按钮-->
                 <Button Grid.Column="2" x:Name="Button_RunOrPause" 
                           Click="Button_RunOrPause_Click" Width="160" CornerRadius="4"
                             Style="{StaticResource AccentButtonStyle}">
@@ -213,6 +215,14 @@
                           Subtitle="Please paste the url into the textbox and then click Add button."
                           PreferredPlacement="Bottom">
         </muxc:TeachingTip>
+        <!--如果下载路径为空，显示提示信息-->
+        <muxc:TeachingTip x:Name="TeachingTip_NullFolderPath" Target="{x:Bind Button_SelectFolder}"
+                          Title="Select the save folder"
+                          Subtitle="Please select the save folder images download to."
+                          PreferredPlacement="Right">
+        </muxc:TeachingTip>
+        
+        <!--第一次运行App的教程-->
         <muxc:TeachingTip x:Name="TeachingTip_EnterUrl" Target="{x:Bind TextBox_UrlInput}"
                           Title="Paste URL in here"
                           Subtitle="Copy the album link you want to download from www.ImageFap.com, then past into the textbox."

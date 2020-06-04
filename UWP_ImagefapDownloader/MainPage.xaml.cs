@@ -96,7 +96,7 @@ namespace UWP_ImagefapDownloader
             }
         }
 
-        private string startButtonText = "Donwload";
+        private string startButtonText = "Start Download";
         public string StartButtonText
         {
             get { return startButtonText; }
@@ -141,7 +141,7 @@ namespace UWP_ImagefapDownloader
         {
             if (!isDownloadStart)
             {
-                StartButtonText = "Donwload";
+                StartButtonText = "Start Download";
                 StartButtonSymbol = Symbol.Download;
             }
             else
@@ -174,7 +174,7 @@ namespace UWP_ImagefapDownloader
             }
         }
         //是否下载到独立的文件夹
-        private bool needIndividualFolder = false;
+        private bool needIndividualFolder = true;
         public bool NeedIndividualFolder
         {
             get { return needIndividualFolder; }
@@ -582,6 +582,10 @@ namespace UWP_ImagefapDownloader
                         //当用户之前设置的文件夹已经不存在
                         setDefaultDownloadFolder();
                     }
+                }
+                else
+                {
+                    setDefaultDownloadFolder();
                 }
             }
 
